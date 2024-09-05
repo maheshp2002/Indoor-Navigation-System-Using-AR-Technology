@@ -6,10 +6,10 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBkgyxDvhEPljxmVRKuFnxK_HIKhtdHuFU',
-    appId: '1:74030690702:android:90466f5dc8ed9d7877b4df',
+    apiKey: 'AIzaSyBOx7pz_vIgiCzTv1znk0UhHTIa8JTS8cE',
+    appId: '1:219644855653:android:7bad1f8e5f468437804d8c',
     messagingSenderId: 'YOUR_ANDROID_MESSAGING_SENDER_ID',
-    projectId: 'mac-tracker-ae2e1',
-    storageBucket: 'mac-tracker-ae2e1.appspot.com',
+    projectId: 'directar-f764a',
+    storageBucket: 'directar-f764a.appspot.com',
   );
 }

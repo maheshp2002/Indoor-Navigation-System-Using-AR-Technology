@@ -1,43 +1,77 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
+# Flutter-specific files
+.flutter/
+.packages
 .pub-cache/
 .pub/
 /build/
+**/build/
+**/.dart_tool/
+**/.idea/
+**/.vscode/
+**/android/.gradle
+**/android/app/debug/
+**/android/app/profile/
+**/android/app/release/
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Pods
+**/ios/Podfile.lock
+**/ios/Runner.xcworkspace
+**/ios/.symlinks/
+**/ios/Flutter/Flutter.framework/
+**/ios/Flutter/App.framework/
+**/ios/Flutter/engine/Flutter.framework/
+**/ios/.generated/
+**/android/local.properties
+**/ios/Flutter/ephemeral/
 
-# Symbolication related
-app.*.symbols
+# IntelliJ related
+.idea/
+*.iml
+*.ipr
+*.iws
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/**/launch.json
+.idea/**/artifacts
+.idea/**/*.iml
+.idea/**/gradle.xml
+.idea/**/libraries
+.idea/**/.idea_modules
+.idea/**/modules.xml
+.idea/**/description.xml
+.idea/**/deploymentTargetDropDown.xml
+.idea/**/.name
+.idea/**/.name/*
 
-# Obfuscation related
-app.*.map.json
+# Visual Studio Code related
+.vscode/
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/settings.json
+.vscode/extensions.json
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Generated files by Flutter or Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+DS_Store
+*.log
+.dart_tool/
+*.lock
+
+# Firebase related
+# android/app/google-services.json
+# ios/Runner/GoogleService-Info.plist
+
+# Mac related
+*.DS_Store
+
+# Linux related
+**/linux/flutter/ephemeral/
+**/linux/flutter/generatedPluginRegistrant.*
