@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "219644855653",
+    "project_id": "directar-f764a",
+    "storage_bucket": "directar-f764a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:219644855653:android:7bad1f8e5f468437804d8c",
+        "android_client_info": {
+          "package_name": "com.directar.directar"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "219644855653-fb3u56d9t6paqt5i8rdbi8kb8kc9b89h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.directar.directar",
+            "certificate_hash": "cdb33a7cd8062cd09ef14d3f37acd83eab62d037"
+          }
+        },
+        {
+          "client_id": "219644855653-4if54cj5sius95r483lprdot0h446bc2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOx7pz_vIgiCzTv1znk0UhHTIa8JTS8cE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "219644855653-4if54cj5sius95r483lprdot0h446bc2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
