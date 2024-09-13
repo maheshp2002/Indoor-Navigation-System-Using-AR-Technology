@@ -1,0 +1,56 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# FastAPI/Uvicorn logs
+*.log
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Pytest cache
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+
+# Database and other environment-specific files
+*.sqlite3
+*.db
+
+# Static files (you can include this if you plan to generate files)
+staticfiles/
+
+# Uploads folder (storing uploaded files, e.g., GLB or GeoTIFF)
+uploads/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# VSCode settings
+.vscode/
+
+# Pipenv
+Pipfile
+Pipfile.lock
+
+# Pyre type checker
+.pyre/
+
+# IDEs
+.idea/
+*.iml
+
+# Env variables
+.env
