@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "219644855653-jheiktflmkipkgcq545hupgg3mcq7cvm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.directar.directar",
+            "certificate_hash": "c81f4b5165c67d37591ac8d9f934d1fe49e3bb6f"
+          }
+        },
+        {
           "client_id": "219644855653-4if54cj5sius95r483lprdot0h446bc2.apps.googleusercontent.com",
           "client_type": 3
         }
