@@ -273,10 +273,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 71b740a87df9fb0499a305aaf80643ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  agent: {fileID: 0}
+  agent: {fileID: 1749022170}
   destination: {fileID: 1285094}
-  lineRenderer: {fileID: 0}
-  arSessionOrigin: {fileID: 0}
+  lineRenderer: {fileID: 1749022171}
+  arSessionOrigin: {fileID: 2071329446}
 --- !u!195 &1749022170
 NavMeshAgent:
   m_ObjectHideFlags: 0
