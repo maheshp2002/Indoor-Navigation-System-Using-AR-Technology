@@ -1,0 +1,4 @@
+uvicorn
+werkzeug
+fastapi
+opencv-python
