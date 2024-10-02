@@ -2,3 +2,4 @@
 2. Download the meshroom from "https://alicevision.org/#meshroom"
 3. Copy and paste the path to MESHROOM_BIN_PATH, MESHROOM_EXE and DRAFT_PIPELINE in the corresponding variables in main.py corresponding
 4. Open the cmd (command prompt) as a administrator and run the api using the command: uvicorn main:app --host 0.0.0.0 --port 8000
+5. Open http://localhost:8000/docs
