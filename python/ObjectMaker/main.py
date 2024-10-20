@@ -7,9 +7,9 @@ import subprocess
 app = FastAPI()
 
 UPLOAD_FOLDER = 'uploads'
-MESHROOM_BIN_PATH = 'D:\\Meshroom-2023.3.0-win64\\Meshroom-2023.3.0\\aliceVision'
-MESHROOM_EXE = 'D:\\Meshroom-2023.3.0-win64\\Meshroom-2023.3.0\\meshroom_batch.exe'
-DRAFT_PIPELINE = 'D:\\Meshroom-2023.3.0-win64\\Meshroom-2023.3.0\\lib\\meshroom\\pipelines\\photogrammetryDraft.mg'
+MESHROOM_BIN_PATH = 'E:\\Meshroom-2023.3.0\\aliceVision'
+MESHROOM_EXE = 'E:\\Meshroom-2023.3.0\\meshroom_batch.exe'
+DRAFT_PIPELINE = 'E:\\Meshroom-2023.3.0\\lib\meshroom\\pipelines\\photogrammetryDraft.mg'
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
