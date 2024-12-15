@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'components/commonAppBar.dart';
 import 'components/navbar.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class Home extends StatefulWidget {
+  const Home({super.key});
 
   @override
-  HomePageState createState() => HomePageState();
+  HomeState createState() => HomeState();
 }
 
-class HomePageState extends State<HomePage> {
+class HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     // final themeManager = Provider.of<ThemeManager>(context);
@@ -23,7 +23,7 @@ class HomePageState extends State<HomePage> {
       drawer: const NavBar(),
       body: Center(
         child: Text(
-          "HomePage",
+          "Home",
           style: theme.textTheme.bodyLarge,
         ),
       ),

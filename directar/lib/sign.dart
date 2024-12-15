@@ -2,7 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
-import 'homepage.dart';
+import 'home.dart';
 
 class SignInPage extends StatelessWidget {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -27,7 +27,7 @@ class SignInPage extends StatelessWidget {
         // Check if the widget is still in the widget tree
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage()),
+          MaterialPageRoute(builder: (context) => const Home()),
         );
       }
     } catch (e) {
@@ -46,7 +46,7 @@ class SignInPage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Image just above the button
-                Image.asset('assets/gifs/map.gif'),
+                // Image.asset('assets/gifs/map.gif'),
                 ElevatedButton(
                   onPressed: () => _signInWithGoogle(context),
                   child: const Text('Sign in with Google'),

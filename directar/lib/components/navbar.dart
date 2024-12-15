@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-import '../homepage.dart';
+import '../home.dart';
 import '../sign.dart';
 
 class NavBar extends StatelessWidget {
@@ -43,7 +43,7 @@ class NavBar extends StatelessWidget {
             title: Text('Home', style: theme.textTheme.bodyLarge),
             onTap: () => Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => HomePage()),
+              MaterialPageRoute(builder: (context) => const Home()),
             ),
           ),
           ListTile(
