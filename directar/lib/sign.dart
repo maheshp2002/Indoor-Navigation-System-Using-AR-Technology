@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
+import 'components/googleSignInButton.dart';
 import 'home.dart';
 
 class SignInPage extends StatelessWidget {
@@ -58,18 +59,22 @@ class SignInPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        color: Colors.white,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () => _signInWithGoogle(context),
-                child: const Text('Sign in with Google'),
-              ),
-            ],
-          ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Padding(
+                padding: EdgeInsets.only(left: 10, right: 10),
+                child: Image(
+                    image:
+                        AssetImage('assets/logo/logo-shadow-transparent.png'))),
+            const SizedBox(
+              height: 20,
+            ),
+            GoogleSignInButton(
+              onPressed: () => _signInWithGoogle(context),
+            ),
+          ],
         ),
       ),
     );

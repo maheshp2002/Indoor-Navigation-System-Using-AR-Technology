@@ -1,22 +1,6 @@
-// import 'package:flutter/material.dart';
-
-// class AdminPage extends StatelessWidget {
-//   const AdminPage({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('Admin Page')),
-//       body: const Center(child: Text('Welcome to the Admin Page!')),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
-
 import '3DModel.dart';
 import 'QR_Code.dart';
-import 'home.dart';
 import 'sign.dart';
 
 class AdminPage extends StatelessWidget {
@@ -30,13 +14,13 @@ class AdminPage extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(
+            const DrawerHeader(
+              decoration: BoxDecoration(
                 color: Colors.orange,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   Icon(Icons.admin_panel_settings,
                       size: 60, color: Colors.white),
                   SizedBox(height: 10),
