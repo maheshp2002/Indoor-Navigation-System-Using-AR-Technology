@@ -14,19 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "219644855653-fb3u56d9t6paqt5i8rdbi8kb8kc9b89h.apps.googleusercontent.com",
+          "client_id": "219644855653-6bl7prihvv9fphqf904l84ornuadjrkb.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.directar.directar",
-            "certificate_hash": "cdb33a7cd8062cd09ef14d3f37acd83eab62d037"
-          }
-        },
-        {
-          "client_id": "219644855653-jheiktflmkipkgcq545hupgg3mcq7cvm.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.directar.directar",
-            "certificate_hash": "c81f4b5165c67d37591ac8d9f934d1fe49e3bb6f"
+            "certificate_hash": "a2df8c536a81b3f6c94afa44925a01b445855c1f"
           }
         },
         {

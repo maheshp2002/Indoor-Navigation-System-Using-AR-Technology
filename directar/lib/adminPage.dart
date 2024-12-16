@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-
 import '3DModel.dart';
 import 'QR_Code.dart';
-import 'home.dart';
 import 'sign.dart';
 import './DetailsPage.dart';
 
@@ -36,7 +34,7 @@ class AdminPage extends StatelessWidget {
               decoration: const BoxDecoration(color: Colors.orange),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
+                children: [
                   Icon(Icons.admin_panel_settings,
                       size: 60, color: Colors.white),
                   SizedBox(height: 10),

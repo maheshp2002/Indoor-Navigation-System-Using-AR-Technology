@@ -6,10 +6,12 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBOx7pz_vIgiCzTv1znk0UhHTIa8JTS8cE',
-    appId: '1:219644855653:android:7bad1f8e5f468437804d8c',
-    messagingSenderId: 'YOUR_ANDROID_MESSAGING_SENDER_ID',
-    projectId: 'directar-f764a',
-    storageBucket: 'directar-f764a.appspot.com',
+    apiKey: "AIzaSyDJ2OtekzAKeFm1SoDtwPqTwAf1620EHsM",
+    authDomain: "directar-f764a.firebaseapp.com",
+    projectId: "directar-f764a",
+    storageBucket: "directar-f764a.appspot.com",
+    messagingSenderId: "219644855653",
+    appId: "1:219644855653:web:b3c83c7873dadf37804d8c",
+    measurementId: "G-8KE7LQR4YP"
   );
 }
