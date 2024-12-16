@@ -24,6 +24,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="directar" />
+    <meta name="google-signin-client_id" content="219644855653-lp3ppj6d55lhegkiqj915m5cd2t74060.apps.googleusercontent.com">
     <link rel="apple-touch-icon" href="icons/Icon-192.png" />
 
     <!-- Favicon -->
@@ -31,13 +32,17 @@
 
     <title>directar</title>
     <link rel="manifest" href="manifest.json" />
+  </head>
+  <body>
+    <script src="flutter_bootstrap.js" async></script>
     <script type="module">
       // Import the functions you need from the SDKs you need
-      import { initializeApp } from "firebase/app";
-      import { getAnalytics } from "firebase/analytics";
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js";
+      import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
       // TODO: Add SDKs for Firebase products that you want to use
       // https://firebase.google.com/docs/web/setup#available-libraries
-
+    
       // Your web app's Firebase configuration
       // For Firebase JS SDK v7.20.0 and later, measurementId is optional
       const firebaseConfig = {
@@ -47,15 +52,13 @@
         storageBucket: "directar-f764a.appspot.com",
         messagingSenderId: "219644855653",
         appId: "1:219644855653:web:b3c83c7873dadf37804d8c",
-        measurementId: "G-8KE7LQR4YP",
+        measurementId: "G-8KE7LQR4YP"
       };
-
+    
       // Initialize Firebase
       const app = initializeApp(firebaseConfig);
       const analytics = getAnalytics(app);
+      const auth = getAuth(app);
     </script>
-  </head>
-  <body>
-    <script src="flutter_bootstrap.js" async></script>
   </body>
 </html>
