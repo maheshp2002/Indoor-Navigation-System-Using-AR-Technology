@@ -1,6 +1,8 @@
+import 'home.dart';
+import 'roleBasedNavigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'homepage.dart';
+// import 'homepage.dart';
 import 'sign.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -27,7 +29,8 @@ class SplashScreenState extends State<SplashScreen> {
       if (user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage()),
+          // MaterialPageRoute(builder: (context) => const Home()),
+          MaterialPageRoute(builder: (context) => const RoleBasedNavigation()),
         );
       } else {
         Navigator.pushReplacement(

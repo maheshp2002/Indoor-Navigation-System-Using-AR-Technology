@@ -9,14 +9,14 @@ class SlideInAnimation extends StatefulWidget {
   final double endPosition;
 
   const SlideInAnimation({
-    Key? key,
+    super.key,
     required this.child,
     this.duration = const Duration(milliseconds: 800),
     this.curve = Curves.easeOut,
     this.delay = Duration.zero,
     this.startPosition = -1.0, // Starts above the screen
     this.endPosition = 0.0, // Ends at normal position
-  }) : super(key: key);
+  });
 
   @override
   SlideInAnimationState createState() => SlideInAnimationState();

@@ -75,3 +75,5 @@ DS_Store
 # Linux related
 **/linux/flutter/ephemeral/
 **/linux/flutter/generatedPluginRegistrant.*
+
+node_modules/

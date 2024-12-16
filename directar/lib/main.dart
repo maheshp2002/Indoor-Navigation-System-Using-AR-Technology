@@ -11,18 +11,24 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+    options: FirebaseOptions(
+        apiKey: "AIzaSyDJ2OtekzAKeFm1SoDtwPqTwAf1620EHsM",
+        appId: "1:219644855653:web:b3c83c7873dadf37804d8c",
+        messagingSenderId: "219644855653",
+        projectId: "1:219644855653:web:b3c83c7873dadf37804d8c"),
   );
 
   runApp(
     ChangeNotifierProvider(
       create: (context) => ThemeManager(),
-      child: MyApp(),
+      child: const MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeManager>(
