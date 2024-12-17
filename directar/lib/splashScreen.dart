@@ -19,7 +19,7 @@ class SplashScreenState extends State<SplashScreen> {
 
   _checkSignInStatus() async {
     await Future.delayed(
-        const Duration(milliseconds: 000)); // Delay for 3 seconds
+        const Duration(milliseconds: 3000)); // Delay for 3 seconds
 
     User? user = FirebaseAuth.instance.currentUser;
     if (mounted) {
