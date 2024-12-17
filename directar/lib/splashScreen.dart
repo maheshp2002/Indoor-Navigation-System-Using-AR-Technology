@@ -1,6 +1,9 @@
+import 'adminPage.dart';
+import 'home.dart';
 import 'roleBasedNavigation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'services/firebaseService.dart';
 import 'sign.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -11,30 +14,31 @@ class SplashScreen extends StatefulWidget {
 }
 
 class SplashScreenState extends State<SplashScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseService _firebaseService = FirebaseService();
+
   @override
   void initState() {
     super.initState();
-    _checkSignInStatus();
+    _handleNavigation();
   }
 
-  _checkSignInStatus() async {
-    await Future.delayed(
-        const Duration(milliseconds: 3000)); // Delay for 3 seconds
+  Future<void> _handleNavigation() async {
+    await Future.delayed(const Duration(seconds: 2));
 
-    User? user = FirebaseAuth.instance.currentUser;
-    if (mounted) {
-      // Check if the widget is still in the widget tree
-      if (user != null) {
-        Navigator.pushReplacement(
-          context,
-          // MaterialPageRoute(builder: (context) => const Home()),
-          MaterialPageRoute(builder: (context) => const RoleBasedNavigation()),
-        );
+    final User? user = _auth.currentUser;
+
+    if (user == null) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignInPage()));
+    } else {
+      final role = await _firebaseService.getUserRole(user.email!);
+
+      if (role == 'Admin') {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminPage()));
+      } else if (role == 'User') {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Home()));
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => SignInPage()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => RoleBasedNavigation(user: user)));
       }
     }
   }

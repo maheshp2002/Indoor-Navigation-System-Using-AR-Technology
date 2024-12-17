@@ -1,9 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import './adminPage.dart';
-import './userPage.dart';
+import 'adminPage.dart';
+import 'home.dart';
+import 'services/firebaseService.dart';
 
 class RoleBasedNavigation extends StatefulWidget {
-  const RoleBasedNavigation({super.key});
+  final User user;
+  const RoleBasedNavigation({super.key, required this.user});
 
   @override
   _RoleBasedNavigationState createState() => _RoleBasedNavigationState();
@@ -13,8 +16,37 @@ class _RoleBasedNavigationState extends State<RoleBasedNavigation> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _organizationController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
-
   String? selectedRole;
+  final FirebaseService _firebaseService = FirebaseService();
+
+  Future<void> submitRole() async {
+    if (_formKey.currentState!.validate()) {
+      final Map<String, dynamic> userData = {
+        'email': widget.user.email,
+        'name': _nameController.text,
+        'role': selectedRole,
+        'organization': selectedRole == 'Admin' ? _organizationController.text : null,
+      };
+
+      await _firebaseService.saveUserDetails(widget.user.email!, userData);
+
+      if (selectedRole == 'Admin') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AdminPage(),
+          ),
+        );
+      } else if (selectedRole == 'User') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const Home(),
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -104,21 +136,7 @@ class _RoleBasedNavigationState extends State<RoleBasedNavigation> {
                     ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          if (selectedRole == 'Admin') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AdminPage(),
-                              ),
-                            );
-                          } else if (selectedRole == 'User') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const UserPage(),
-                              ),
-                            );
-                          }
+                          submitRole();
                         }
                       },
                       child: const Text('Submit'),

@@ -2,32 +2,31 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
-
+import 'adminPage.dart';
 import 'components/googleSignInButton.dart';
 import 'home.dart';
+import 'roleBasedNavigation.dart';
+import 'services/firebaseService.dart';
 
 class SignInPage extends StatelessWidget {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseService _firebaseService = FirebaseService();
 
   SignInPage({super.key});
 
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
+      User? user;
+
       if (kIsWeb) {
         // Web sign-in logic
         final GoogleAuthProvider googleProvider = GoogleAuthProvider();
         final UserCredential userCredential =
             await _auth.signInWithPopup(googleProvider);
-
-        if (userCredential.user != null && context.mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const Home()),
-          );
-        }
+        user = userCredential.user;
       } else {
-        // Android (and other non-web platforms) sign-in logic
+        // Mobile sign-in logic
         final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
         final GoogleSignInAuthentication googleAuth =
             await googleUser!.authentication;
@@ -39,22 +38,45 @@ class SignInPage extends StatelessWidget {
 
         final UserCredential userCredential =
             await _auth.signInWithCredential(credential);
+        user = userCredential.user;
+      }
 
-        if (userCredential.user != null && context.mounted) {
+      if (user != null) {
+        final String email = user.email!;
+        final role = await _firebaseService.getUserRole(email);
+
+        if (role != null) {
+          if (role == 'Admin') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AdminPage(),
+              ),
+            );
+          } else if (role == 'User') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const Home(),
+              ),
+            );
+          }
+        } else {
+          // Document does not exist; navigate to RoleBasedNavigation
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const Home()),
+            MaterialPageRoute(builder: (context) => RoleBasedNavigation(user: user!)),
           );
         }
       }
     } catch (e) {
-      // Handle errors here
       print('Error signing in with Google: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error signing in: $e')),
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
