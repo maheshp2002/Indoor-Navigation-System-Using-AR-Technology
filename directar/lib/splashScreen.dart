@@ -24,21 +24,25 @@ class SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _handleNavigation() async {
-    await Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(milliseconds: 2000));
 
     final User? user = _auth.currentUser;
 
     if (user == null) {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SignInPage()));
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => SignInPage()));
     } else {
       final role = await _firebaseService.getUserRole(user.email!);
 
       if (role == 'Admin') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const AdminPage()));
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => const AdminPage()));
       } else if (role == 'User') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const Home()));
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => const Home()));
       } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => RoleBasedNavigation(user: user)));
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (_) => RoleBasedNavigation(user: user)));
       }
     }
   }
@@ -48,8 +52,8 @@ class SplashScreenState extends State<SplashScreen> {
     return Scaffold(
       body: Center(
         child: Image.asset(
-          "assets/logo/logo-shadow-transparent.png",
-          width: 200,
+          "assets/gifs/logo-splash-screen.gif",
+          width: 900,
         ), // Ensure you have a logo.png in the assets folder
       ),
     );
