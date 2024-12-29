@@ -1,3 +1,4 @@
+import 'package:directar/components/mapEditor.dart';
 import 'package:flutter/material.dart';
 import '3DModel.dart';
 import 'QR_Code.dart';
@@ -167,7 +168,10 @@ class AdminPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Add your floating button action here
+           Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => MapEditor()),
+                );
         },
         child: const Icon(Icons.add),
       ),
