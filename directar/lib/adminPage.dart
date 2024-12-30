@@ -1,4 +1,4 @@
-import 'package:directar/components/mapEditor.dart';
+import 'package:directar/unity/mapEditor.dart';
 import 'package:flutter/material.dart';
 import '3DModel.dart';
 import 'QR_Code.dart';

@@ -124,6 +124,10 @@ class _MapEditorState extends State<MapEditor> {
             onPressed: _importScene,
             child: Text("Import Scene"),
           ),
+          ElevatedButton(
+            onPressed: _generateQr,
+            child: Text("Generate QR"),
+          ),
         ],
       ),
     );
@@ -168,23 +172,6 @@ class _MapEditorState extends State<MapEditor> {
   void _showUnityUI() {
     if (_isUnityReady) {
       _unityController.postMessage('SceneController', 'ShowUnityUI', '');
-    } else {
-      print("Unity is not ready.");
-    }
-  }
-
-  void _addNavigationPoint(String label, bool isSource, bool isDestination,
-      double x, double y, double z) {
-    if (_isUnityReady) {
-      Map<String, dynamic> pointData = {
-        "label": label,
-        "isSource": isSource,
-        "isDestination": isDestination,
-        "position": [x, y, z],
-      };
-      String json = jsonEncode(pointData);
-      _unityController.postMessage(
-          'SceneController', 'AddNavigationPoint', json);
     } else {
       print("Unity is not ready.");
     }
@@ -242,6 +229,14 @@ class _MapEditorState extends State<MapEditor> {
       }
     } else {
       print("No file selected.");
+    }
+  }
+
+  void _generateQr() {
+    if (_isUnityReady) {
+      _unityController.postMessage('SceneController', 'ExportSceneAndGenerateQR', '');
+    } else {
+      print("Unity is not ready.");
     }
   }
 }

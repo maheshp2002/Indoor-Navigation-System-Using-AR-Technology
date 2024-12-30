@@ -10,6 +10,8 @@ using FlutterUnityIntegration;
 using System.IO.Compression;
 using UnityEngine.EventSystems;
 using System.Linq; 
+using ZXing;
+using ZXing.QrCode;
 
 public class SceneController : MonoBehaviour
 {
@@ -27,6 +29,8 @@ public class SceneController : MonoBehaviour
     [SerializeField] private Camera miniCamera;
     // Create and assign in Unity Editor
     [SerializeField] private RenderTexture miniCameraRenderTexture; 
+    [SerializeField] private QRCodeGenerator qrCodeGenerator;
+
 
     void Start()
     {
@@ -347,7 +351,6 @@ public class SceneController : MonoBehaviour
             foundObj.transform.position = obj.transform.position;
             foundObj.transform.rotation = obj.transform.rotation;
             foundObj.transform.localScale = obj.transform.localScale;
-            Debug.Log($"obj.transform.position: {obj.transform.position},\n obj.transform.rotation {obj.transform.rotation},\n {obj.transform.localScale}");
         }
         else
         {
@@ -646,6 +649,40 @@ public class SceneController : MonoBehaviour
         {
             Debug.LogError($"Failed to export scene: {ex.Message}");
         }
+    }
+
+public void ExportSceneAndGenerateQR()
+{
+    if (qrCodeGenerator == null)
+    {
+        Debug.LogError("QRCodeGenerator not found.");
+        return;
+    }
+
+    string sceneAccessURL = "https://github.com/maheshp2002/Indoor-Navigation-System-Using-AR-Technology";
+    Texture2D qrCode = qrCodeGenerator.GenerateQR(sceneAccessURL);
+    byte[] qrCodeBytes = qrCode.EncodeToPNG();
+    string base64QRCode = Convert.ToBase64String(qrCodeBytes);
+
+    var message = new
+    {
+        type = "QRCode",
+        data = base64QRCode
+    };
+    DownloadQRCode(base64QRCode);
+}
+
+
+    public void DownloadQRCode(string base64Image)
+    {
+        Application.ExternalEval($@"
+            var link = document.createElement('a');
+            link.href = 'data:image/png;base64,' + '{base64Image}';
+            link.download = 'QRCode.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        ");
     }
 
     public void ImportSceneFromBase64(string base64String)

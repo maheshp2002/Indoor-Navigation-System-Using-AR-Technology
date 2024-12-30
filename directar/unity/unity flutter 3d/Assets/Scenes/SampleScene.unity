@@ -2091,6 +2091,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1196390391}
   - component: {fileID: 1196390392}
+  - component: {fileID: 1196390393}
   m_Layer: 0
   m_Name: SceneController
   m_TagString: Untagged
@@ -2130,6 +2131,19 @@ MonoBehaviour:
   canvasUI: {fileID: 1448671060}
   miniCamera: {fileID: 386374138}
   miniCameraRenderTexture: {fileID: 8400000, guid: 9f5d22c88184703439598dcfa4de50c2, type: 2}
+  qrCodeGenerator: {fileID: 1196390393}
+--- !u!114 &1196390393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1196390390}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: adc14fc945a6a61409c0476e0794fdd3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1321106740
 GameObject:
   m_ObjectHideFlags: 0
