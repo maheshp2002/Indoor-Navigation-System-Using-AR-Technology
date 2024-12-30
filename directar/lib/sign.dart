@@ -65,7 +65,8 @@ class SignInPage extends StatelessWidget {
           // Document does not exist; navigate to RoleBasedNavigation
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => RoleBasedNavigation(user: user!)),
+            MaterialPageRoute(
+                builder: (context) => RoleBasedNavigation(user: user!)),
           );
         }
       }
@@ -76,7 +77,6 @@ class SignInPage extends StatelessWidget {
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {

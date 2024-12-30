@@ -1,8 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_unity_widget/flutter_unity_widget.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:ulid/ulid.dart';
+import '../services/firebaseService.dart';
 
 class MapEditor extends StatefulWidget {
   @override
@@ -11,6 +15,8 @@ class MapEditor extends StatefulWidget {
 
 class _MapEditorState extends State<MapEditor> {
   late UnityWidgetController _unityController;
+  String? email = FirebaseAuth.instance.currentUser?.email;
+  final FirebaseService _firebaseService = FirebaseService();
   bool _isUnityReady = false;
   bool _isHelpVisible = false;
 
@@ -138,8 +144,31 @@ class _MapEditorState extends State<MapEditor> {
     _isUnityReady = true;
   }
 
-  void onUnityMessage(dynamic message) {
+  Future<void> onUnityMessage(dynamic message) async {
     print('Received message from Unity: $message');
+    if (email != null) {
+      if (message['type'] == 'ExportScene') {
+        String zipBase64 = message['data'];
+
+        // Upload to Firebase
+        await uploadToFirebase(
+          email: email!,
+          base64Data: zipBase64,
+          storagePath: 'maps',
+          fileExtension: 'zip',
+          firestoreCollection: 'maps',
+        );
+      } else if (message['type'] == 'QRCode') {
+        String qrBase64 = message['data'];
+        await uploadToFirebase(
+          email: email!,
+          base64Data: qrBase64,
+          storagePath: 'qr_codes',
+          fileExtension: 'png',
+          firestoreCollection: 'qrcodes',
+        );
+      }
+    }
   }
 
   void _importObject() async {
@@ -233,10 +262,45 @@ class _MapEditorState extends State<MapEditor> {
   }
 
   void _generateQr() {
+    
     if (_isUnityReady) {
-      _unityController.postMessage('SceneController', 'ExportSceneAndGenerateQR', '');
+      const sceneAccessURL =
+          "https://github.com/maheshp2002/Indoor-Navigation-System-Using-AR-Technology";
+      _unityController.postMessage(
+          'SceneController', 'ExportSceneAndGenerateQR', sceneAccessURL);
     } else {
       print("Unity is not ready.");
     }
+  }
+
+  Future<void> uploadToFirebase({
+    required String email,
+    required String base64Data,
+    required String storagePath,
+    required String fileExtension,
+    required String firestoreCollection,
+  }) async {
+    // Generate a unique file name
+    String uniqueFileName = "${Ulid()}.$fileExtension";
+
+    // Decode the base64 data
+    Uint8List fileBytes = base64Decode(base64Data);
+
+    // Upload the file to Firebase Storage
+    final fileRef =
+        FirebaseStorage.instance.ref('$storagePath/$email/$uniqueFileName');
+    final uploadTask = await fileRef.putData(fileBytes);
+    final fileUrl = await uploadTask.ref.getDownloadURL();
+
+    // Save the file details to Firestore
+    final now = DateTime.now();
+    final Map<String, dynamic> data = {
+      'url': fileUrl,
+      'date': now.toIso8601String(),
+      'time': now.millisecondsSinceEpoch,
+      'last_opened_time': now.toIso8601String(),
+    };
+
+    await _firebaseService.saveMapDetails(email, firestoreCollection, data);
   }
 }

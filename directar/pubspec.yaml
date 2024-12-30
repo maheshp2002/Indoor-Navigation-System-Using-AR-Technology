@@ -43,6 +43,7 @@ dependencies:
   # Storage
   cloud_firestore: ^5.2.1
   shared_preferences: ^2.3.1
+  firebase_storage: ^12.3.7
 
   # Styles
   google_fonts: ^6.2.1
@@ -58,6 +59,7 @@ dependencies:
   # Others
   provider: ^6.1.2
   qr_code_scanner: ^0.4.0
+  ulid: ^2.0.1
 
   # Unity
   flutter_unity_widget: ^2022.2.1

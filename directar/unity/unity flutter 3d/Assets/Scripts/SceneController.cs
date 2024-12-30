@@ -9,13 +9,13 @@ using Dummiesman;
 using FlutterUnityIntegration;
 using System.IO.Compression;
 using UnityEngine.EventSystems;
-using System.Linq; 
+using System.Linq;
 using ZXing;
 using ZXing.QrCode;
 
 public class SceneController : MonoBehaviour
 {
-    [SerializeField] private Material defaultMaterial; 
+    [SerializeField] private Material defaultMaterial;
     public GameObject navigationPointPrefab;
     private List<GameObject> spawnedObjects = new List<GameObject>();
     private Camera mainCamera;
@@ -28,7 +28,7 @@ public class SceneController : MonoBehaviour
     // Assign in the inspector
     [SerializeField] private Camera miniCamera;
     // Create and assign in Unity Editor
-    [SerializeField] private RenderTexture miniCameraRenderTexture; 
+    [SerializeField] private RenderTexture miniCameraRenderTexture;
     [SerializeField] private QRCodeGenerator qrCodeGenerator;
 
 
@@ -127,7 +127,7 @@ public class SceneController : MonoBehaviour
         {
             Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
             if (Physics.Raycast(ray, out RaycastHit hit))
-            {   
+            {
                 if (selectedObject != null)
                 {
                     DeselectObject(selectedObject);
@@ -401,9 +401,9 @@ public class SceneController : MonoBehaviour
     // Update the LoadModelFromUrl to handle base64 string
     public void LoadModelFromBase64(string base64String)
     {
-        #if UNITY_WEBGL
+#if UNITY_WEBGL
         StartCoroutine(DownloadAndLoadModelFromBase64(base64String));
-        #endif
+#endif
     }
 
     private IEnumerator DownloadAndLoadModelFromBase64(string base64String)
@@ -419,26 +419,26 @@ public class SceneController : MonoBehaviour
                 // Assign a unique name to the imported object
                 string uniqueName = Guid.NewGuid().ToString();
                 importedModel.name = uniqueName;
-                
+
                 AssignDefaultShader(importedModel);
                 importedModel.transform.position = Vector3.zero;
 
                 // Send scale and rotation information back to Flutter
                 string logMessages = $"Model Scale: {importedModel.transform.localScale}, Rotation: {importedModel.transform.rotation.eulerAngles}";
-                UnityMessageManager.Instance.SendMessageToFlutter(logMessages); 
+                UnityMessageManager.Instance.SendMessageToFlutter(logMessages);
 
-                #if UNITY_WEBGL
+#if UNITY_WEBGL
                     // Flip the model along the X-axis to correct the mirroring issue
                     importedModel.transform.localScale = new Vector3(
                         -importedModel.transform.localScale.x,
                         importedModel.transform.localScale.y,
                         importedModel.transform.localScale.z
                     );
-                #endif
+#endif
 
-                #if UNITY_WEBGL
+#if UNITY_WEBGL
                     importedModel.transform.Rotate(0, 180, 0);
-                #endif
+#endif
 
                 // Fit the imported model into the camera view
                 FitObjectToCamera(importedModel);
@@ -449,7 +449,7 @@ public class SceneController : MonoBehaviour
                 spawnedObjects.Add(importedModel);
                 // Send scale and rotation information back to Flutter
                 string logMessage = $"Model Scale: {importedModel.transform.localScale}, Rotation: {importedModel.transform.rotation.eulerAngles}";
-                UnityMessageManager.Instance.SendMessageToFlutter(logMessage); 
+                UnityMessageManager.Instance.SendMessageToFlutter(logMessage);
             }
             else
             {
@@ -631,19 +631,27 @@ public class SceneController : MonoBehaviour
                 zipData = zipStream.ToArray();
             }
 
+            string base64Zip = Convert.ToBase64String(zipData);
+
+            var message = new
+            {
+                type = "ExportScene",
+                data = base64Zip
+            };
+            // Send the data to Flutter
+            string jsonMessage = JsonUtility.ToJson(message);
+            Application.ExternalCall("onUnityMessage", jsonMessage);
+
             // Trigger the browser download
             #if UNITY_WEBGL
-            string base64Zip = Convert.ToBase64String(zipData);
-            Application.ExternalEval($@"
-                var blob = new Blob([Uint8Array.from(atob('{base64Zip}').split('').map(c => c.charCodeAt(0)))], {{ type: 'application/zip' }});
-                var link = document.createElement('a');
-                link.href = URL.createObjectURL(blob);
-                link.download = 'SceneExport.zip';
-                link.click();
-            ");
+                            Application.ExternalEval($@"
+                                var blob = new Blob([Uint8Array.from(atob('{base64Zip}').split('').map(c => c.charCodeAt(0)))], {{ type: 'application/zip' }});
+                                var link = document.createElement('a');
+                                link.href = URL.createObjectURL(blob);
+                                link.download = 'SceneExport.zip';
+                                link.click();
+                            ");
             #endif
-
-            Debug.Log("Scene exported successfully.");
         }
         catch (Exception ex)
         {
@@ -651,27 +659,29 @@ public class SceneController : MonoBehaviour
         }
     }
 
-public void ExportSceneAndGenerateQR()
-{
-    if (qrCodeGenerator == null)
+    public void ExportSceneAndGenerateQR(string url)
     {
-        Debug.LogError("QRCodeGenerator not found.");
-        return;
+        if (qrCodeGenerator == null)
+        {
+            Debug.LogError("QRCodeGenerator not found.");
+            return;
+        }
+
+        string sceneAccessURL = "https://github.com/maheshp2002/Indoor-Navigation-System-Using-AR-Technology";
+        Texture2D qrCode = qrCodeGenerator.GenerateQR(sceneAccessURL);
+        byte[] qrCodeBytes = qrCode.EncodeToPNG();
+        string base64QRCode = Convert.ToBase64String(qrCodeBytes);
+
+        var message = new
+        {
+            type = "QRCode",
+            data = base64QRCode
+        };
+        // Send the data to Flutter
+        string jsonMessage = JsonUtility.ToJson(message);
+        Application.ExternalCall("onUnityMessage", jsonMessage);
+        DownloadQRCode(base64QRCode);
     }
-
-    string sceneAccessURL = "https://github.com/maheshp2002/Indoor-Navigation-System-Using-AR-Technology";
-    Texture2D qrCode = qrCodeGenerator.GenerateQR(sceneAccessURL);
-    byte[] qrCodeBytes = qrCode.EncodeToPNG();
-    string base64QRCode = Convert.ToBase64String(qrCodeBytes);
-
-    var message = new
-    {
-        type = "QRCode",
-        data = base64QRCode
-    };
-    DownloadQRCode(base64QRCode);
-}
-
 
     public void DownloadQRCode(string base64Image)
     {
@@ -690,7 +700,7 @@ public void ExportSceneAndGenerateQR()
         try
         {
             ClearTempFolder();
-            
+
             // Decode the base64 string into a byte array
             byte[] zipBytes = Convert.FromBase64String(base64String);
 

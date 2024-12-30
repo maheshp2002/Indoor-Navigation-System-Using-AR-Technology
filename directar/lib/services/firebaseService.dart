@@ -4,8 +4,22 @@ class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Save or update user details
-  Future<void> saveUserDetails(String userEmail, Map<String, dynamic> userData) async {
-    await _firestore.collection('users').doc(userEmail).set(userData, SetOptions(merge: true));
+  Future<void> saveUserDetails(
+      String userEmail, Map<String, dynamic> userData) async {
+    await _firestore
+        .collection('users')
+        .doc(userEmail)
+        .set(userData, SetOptions(merge: true));
+  }
+
+  // Save or update user details
+  Future<void> saveMapDetails(String userEmail, String collectionName,
+      Map<String, dynamic> userData) async {
+    await _firestore
+        .collection('users')
+        .doc(userEmail)
+        .collection(collectionName)
+        .add(userData);
   }
 
   // Fetch user role
