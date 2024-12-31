@@ -13,13 +13,27 @@ class FirebaseService {
   }
 
   // Save or update user details
-  Future<void> saveMapDetails(String userEmail, String collectionName,
-      Map<String, dynamic> userData) async {
-    await _firestore
+  Future<DocumentReference> saveMapDetails(
+      String userEmail, String collectionName, Map<String, dynamic> userData) async {
+    return await _firestore
         .collection('users')
         .doc(userEmail)
         .collection(collectionName)
         .add(userData);
+  }
+
+  // Get or update user details
+  Future<DocumentSnapshot<Map<String, dynamic>>> getMapDetails(
+    String userEmail,
+    String collectionName,
+    String mapsDocumentId,
+  ) async {
+    return await _firestore
+        .collection('users')
+        .doc(userEmail)
+        .collection(collectionName)
+        .doc(mapsDocumentId)
+        .get();
   }
 
   // Fetch user role

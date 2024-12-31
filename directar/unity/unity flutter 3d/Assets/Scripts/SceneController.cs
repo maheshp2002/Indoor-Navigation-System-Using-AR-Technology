@@ -12,6 +12,7 @@ using UnityEngine.EventSystems;
 using System.Linq;
 using ZXing;
 using ZXing.QrCode;
+using Newtonsoft.Json;
 
 public class SceneController : MonoBehaviour
 {
@@ -30,7 +31,7 @@ public class SceneController : MonoBehaviour
     // Create and assign in Unity Editor
     [SerializeField] private RenderTexture miniCameraRenderTexture;
     [SerializeField] private QRCodeGenerator qrCodeGenerator;
-
+    [SerializeField] private UnityMessageSender unityMessageSender;
 
     void Start()
     {
@@ -589,7 +590,6 @@ public class SceneController : MonoBehaviour
                         isSource = false,
                         isDestination = false
                     };
-                    Debug.Log("Exported Scene Data: " + objData);
                     sceneData.objects.Add(objData);
                 }
             }
@@ -639,8 +639,8 @@ public class SceneController : MonoBehaviour
                 data = base64Zip
             };
             // Send the data to Flutter
-            string jsonMessage = JsonUtility.ToJson(message);
-            Application.ExternalCall("onUnityMessage", jsonMessage);
+            string jsonMessage = JsonConvert.SerializeObject(message);
+            unityMessageSender.SendMessageToFlutter(jsonMessage);
 
             // Trigger the browser download
             #if UNITY_WEBGL
@@ -659,7 +659,7 @@ public class SceneController : MonoBehaviour
         }
     }
 
-    public void ExportSceneAndGenerateQR(string url)
+    public void ExportSceneAndGenerateQR(string sceneAccessURL)
     {
         if (qrCodeGenerator == null)
         {
@@ -667,7 +667,6 @@ public class SceneController : MonoBehaviour
             return;
         }
 
-        string sceneAccessURL = "https://github.com/maheshp2002/Indoor-Navigation-System-Using-AR-Technology";
         Texture2D qrCode = qrCodeGenerator.GenerateQR(sceneAccessURL);
         byte[] qrCodeBytes = qrCode.EncodeToPNG();
         string base64QRCode = Convert.ToBase64String(qrCodeBytes);
@@ -679,7 +678,6 @@ public class SceneController : MonoBehaviour
         };
         // Send the data to Flutter
         string jsonMessage = JsonUtility.ToJson(message);
-        Application.ExternalCall("onUnityMessage", jsonMessage);
         DownloadQRCode(base64QRCode);
     }
 

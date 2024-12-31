@@ -9,6 +9,11 @@ import 'package:ulid/ulid.dart';
 import '../services/firebaseService.dart';
 
 class MapEditor extends StatefulWidget {
+
+  final String? MapsDocumentId;
+
+  MapEditor({required this.MapsDocumentId});
+  
   @override
   _MapEditorState createState() => _MapEditorState();
 }
@@ -19,6 +24,7 @@ class _MapEditorState extends State<MapEditor> {
   final FirebaseService _firebaseService = FirebaseService();
   bool _isUnityReady = false;
   bool _isHelpVisible = false;
+  String? _mapsDocumentId;
 
   final List<String> controls = [
     'W: Move Camera Forward',
@@ -55,6 +61,12 @@ class _MapEditorState extends State<MapEditor> {
     'R: Right View',
     'Back: Back View',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _mapsDocumentId = widget.MapsDocumentId;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,10 +158,10 @@ class _MapEditorState extends State<MapEditor> {
 
   Future<void> onUnityMessage(dynamic message) async {
     print('Received message from Unity: $message');
+    var messageMap = jsonDecode(message);
     if (email != null) {
-      if (message['type'] == 'ExportScene') {
-        String zipBase64 = message['data'];
-
+      if (messageMap['type'] == 'ExportScene') {
+        String zipBase64 = messageMap['data'];
         // Upload to Firebase
         await uploadToFirebase(
           email: email!,
@@ -158,16 +170,7 @@ class _MapEditorState extends State<MapEditor> {
           fileExtension: 'zip',
           firestoreCollection: 'maps',
         );
-      } else if (message['type'] == 'QRCode') {
-        String qrBase64 = message['data'];
-        await uploadToFirebase(
-          email: email!,
-          base64Data: qrBase64,
-          storagePath: 'qr_codes',
-          fileExtension: 'png',
-          firestoreCollection: 'qrcodes',
-        );
-      }
+      } 
     }
   }
 
@@ -261,13 +264,32 @@ class _MapEditorState extends State<MapEditor> {
     }
   }
 
-  void _generateQr() {
-    
+  Future<String?> _getMapZipUrl() async {
+    if (_mapsDocumentId != null) {
+      try {
+        final doc = await _firebaseService.getMapDetails(
+          email!,
+          'maps',
+          _mapsDocumentId!,
+        );
+        if (doc.exists) {
+          return doc.data()?['url'] as String?;
+        }
+      } catch (e) {
+        print('Error fetching map details: $e');
+      }
+    }
+    return null;
+  }
+
+  void _generateQr() async {
     if (_isUnityReady) {
-      const sceneAccessURL =
-          "https://github.com/maheshp2002/Indoor-Navigation-System-Using-AR-Technology";
-      _unityController.postMessage(
-          'SceneController', 'ExportSceneAndGenerateQR', sceneAccessURL);
+      String? sceneAccessURL = await _getMapZipUrl();
+      if(sceneAccessURL != null) {
+        print(sceneAccessURL);
+        _unityController.postMessage(
+            'SceneController', 'ExportSceneAndGenerateQR', sceneAccessURL);
+      }
     } else {
       print("Unity is not ready.");
     }
@@ -301,6 +323,12 @@ class _MapEditorState extends State<MapEditor> {
       'last_opened_time': now.toIso8601String(),
     };
 
-    await _firebaseService.saveMapDetails(email, firestoreCollection, data);
+    final docRef = await _firebaseService.saveMapDetails(email, firestoreCollection, data);
+    final documentId = docRef.id;
+
+    // Store the documentId in the state
+    setState(() {
+      _mapsDocumentId = documentId;
+    });
   }
 }
