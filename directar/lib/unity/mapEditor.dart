@@ -7,24 +7,28 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:ulid/ulid.dart';
 import '../services/firebaseService.dart';
+import 'package:http/http.dart' as http;
 
 class MapEditor extends StatefulWidget {
 
-  final String? MapsDocumentId;
+  final String? mapsDocumentId;
+  final String? mapsUrl;
+  final bool isEditMode;
 
-  MapEditor({required this.MapsDocumentId});
+  const MapEditor({super.key, required this.mapsDocumentId, required this.mapsUrl, required this.isEditMode});
   
   @override
-  _MapEditorState createState() => _MapEditorState();
+  MapEditorState createState() => MapEditorState();
 }
 
-class _MapEditorState extends State<MapEditor> {
+class MapEditorState extends State<MapEditor> {
   late UnityWidgetController _unityController;
   String? email = FirebaseAuth.instance.currentUser?.email;
   final FirebaseService _firebaseService = FirebaseService();
   bool _isUnityReady = false;
   bool _isHelpVisible = false;
   String? _mapsDocumentId;
+  String? _mapsUrl;
 
   final List<String> controls = [
     'W: Move Camera Forward',
@@ -65,7 +69,27 @@ class _MapEditorState extends State<MapEditor> {
   @override
   void initState() {
     super.initState();
-    _mapsDocumentId = widget.MapsDocumentId;
+    _mapsDocumentId = widget.mapsDocumentId;
+    _mapsUrl = widget.mapsUrl;
+
+    if (widget.isEditMode && _mapsUrl != null && _mapsUrl != null) {
+     _loadInitialSceneFromUrl(widget.mapsUrl!);
+    }
+  }
+
+  Future<void> _loadInitialSceneFromUrl(String mapsUrl) async {
+    try {
+      final response = await http.get(Uri.parse(mapsUrl));
+      if (response.statusCode == 200) {
+        final base64String = base64Encode(response.bodyBytes);
+        _unityController.postMessage(
+            'SceneController', 'ImportSceneFromBase64', base64String);
+      } else {
+        print("Failed to download map zip file: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("Error loading initial scene: $e");
+    }
   }
 
   @override
@@ -302,6 +326,13 @@ class _MapEditorState extends State<MapEditor> {
     required String fileExtension,
     required String firestoreCollection,
   }) async {
+    if (_mapsUrl != null) {
+      // Delete existing file
+      final fileRef = FirebaseStorage.instance.refFromURL(_mapsUrl!);
+      await fileRef.delete();
+      print("Deleted previous map zip file.");
+    }
+
     // Generate a unique file name
     String uniqueFileName = "${Ulid()}.$fileExtension";
 
@@ -316,19 +347,29 @@ class _MapEditorState extends State<MapEditor> {
 
     // Save the file details to Firestore
     final now = DateTime.now();
-    final Map<String, dynamic> data = {
-      'url': fileUrl,
-      'date': now.toIso8601String(),
-      'time': now.millisecondsSinceEpoch,
-      'last_opened_time': now.toIso8601String(),
-    };
 
-    final docRef = await _firebaseService.saveMapDetails(email, firestoreCollection, data);
-    final documentId = docRef.id;
+    if (!widget.isEditMode && _mapsDocumentId == null && _mapsUrl == null) {
+      final Map<String, dynamic> data = {
+        'url': fileUrl,
+        'date': now.toIso8601String(),
+        'time': now.millisecondsSinceEpoch,
+        'last_opened_time': now.toIso8601String()
+      };
 
-    // Store the documentId in the state
+      final docRef = await _firebaseService.saveMapDetails(email, firestoreCollection, data);
+      final documentId = docRef.id;
+
+      // Store the documentId in the state
+      setState(() {
+        _mapsDocumentId = documentId;
+      });
+    } else {
+      await _firebaseService.updateMapDetails(email, firestoreCollection, _mapsDocumentId!, fileUrl);
+    }
+
+    // Store the fileUrl in the state
     setState(() {
-      _mapsDocumentId = documentId;
+      _mapsUrl = fileUrl;
     });
   }
 }

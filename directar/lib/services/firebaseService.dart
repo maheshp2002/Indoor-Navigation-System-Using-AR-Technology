@@ -12,6 +12,18 @@ class FirebaseService {
         .set(userData, SetOptions(merge: true));
   }
 
+  Future<void> updateMapDetails(
+      String userEmail, String collectionName, String mapsDocumentId, String newUrl) async {
+    await _firestore
+        .collection('users')
+        .doc(userEmail)
+        .collection(collectionName)
+        .doc(mapsDocumentId)
+        .update({
+          'url': newUrl
+        });
+  }
+
   // Save or update user details
   Future<DocumentReference> saveMapDetails(
       String userEmail, String collectionName, Map<String, dynamic> userData) async {
@@ -22,7 +34,7 @@ class FirebaseService {
         .add(userData);
   }
 
-  // Get or update user details
+  // Get user details
   Future<DocumentSnapshot<Map<String, dynamic>>> getMapDetails(
     String userEmail,
     String collectionName,

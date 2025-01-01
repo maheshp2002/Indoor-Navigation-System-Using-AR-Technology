@@ -170,7 +170,7 @@ class AdminPage extends StatelessWidget {
         onPressed: () {
            Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => MapEditor(MapsDocumentId: null)),
+                  MaterialPageRoute(builder: (context) => const MapEditor(mapsDocumentId: null, mapsUrl: null, isEditMode: false)),
                 );
         },
         child: const Icon(Icons.add),
