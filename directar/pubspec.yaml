@@ -19,7 +19,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.4.4 <4.0.0"
+  sdk: ">=3.4.0 <4.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -58,12 +58,11 @@ dependencies:
 
   # Others
   provider: ^6.1.2
-  qr_code_scanner: ^1.0.1
   ulid: ^2.0.1
 
   # Unity
   flutter_unity_widget: ^2022.2.1
-  file_picker: ^5.0.0
+  file_picker: ^8.1.7
 
 dev_dependencies:
   flutter_test:
