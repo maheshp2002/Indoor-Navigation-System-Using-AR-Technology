@@ -58,7 +58,7 @@ dependencies:
 
   # Others
   provider: ^6.1.2
-  qr_code_scanner: ^0.4.0
+  qr_code_scanner: ^1.0.1
   ulid: ^2.0.1
 
   # Unity
