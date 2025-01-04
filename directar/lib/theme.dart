@@ -150,6 +150,8 @@ class AppTheme {
     textTheme: TextTheme(
       displayLarge: AppTextStyles.headline.copyWith(color: Colors.black87),
       bodyLarge: AppTextStyles.bodyText.copyWith(color: Colors.black87),
+      bodyMedium: AppTextStyles.bodyText.copyWith(color: Colors.black87, fontSize: 20),
+      bodySmall: AppTextStyles.bodyText.copyWith(color: Colors.black87, fontSize: 10),
       headlineLarge:
           AppTextStyles.bodyText.copyWith(color: Colors.black87, fontSize: 25),
       displayMedium: AppTextStyles.appBarTitle
@@ -186,6 +188,8 @@ class AppTheme {
     textTheme: TextTheme(
       displayLarge: AppTextStyles.headline.copyWith(color: Colors.white),
       bodyLarge: AppTextStyles.bodyText.copyWith(color: Colors.white),
+      bodyMedium: AppTextStyles.bodyText.copyWith(color: Colors.white, fontSize: 20),
+      bodySmall: AppTextStyles.bodyText.copyWith(color: Colors.white, fontSize: 10),
       headlineLarge:
           AppTextStyles.bodyText.copyWith(color: Colors.white, fontSize: 25),
       displayMedium: AppTextStyles.appBarTitle

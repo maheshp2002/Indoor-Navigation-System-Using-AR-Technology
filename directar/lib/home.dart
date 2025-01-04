@@ -1,4 +1,7 @@
+import 'package:directar/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'QrCodeScanning.dart';
 import 'components/commonAppBar.dart';
 import 'components/navbar.dart';
 
@@ -12,10 +15,7 @@ class Home extends StatefulWidget {
 class HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
-    // final themeManager = Provider.of<ThemeManager>(context);
-    // final themeMode = themeManager.themeMode;
     final theme = Theme.of(context);
-    // final customTheme = theme.extension<AppThemeExtension>();
     return Scaffold(
       appBar: const CommonAppBar(
         title: 'DirectAr',
@@ -27,6 +27,16 @@ class HomeState extends State<Home> {
           style: theme.textTheme.bodyLarge,
         ),
       ),
-    );
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.secondaryColor,
+        child: const Icon(FontAwesomeIcons.qrcode),
+        onPressed: () {
+           Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const QRCodeScanning()),
+                );
+        },
+    ));
   }
 }
