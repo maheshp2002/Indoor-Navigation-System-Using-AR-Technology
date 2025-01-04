@@ -85,58 +85,103 @@ class QRCodeScanningState extends State<QRCodeScanning> {
     final themeManager = Provider.of<ThemeManager>(context);
 
     return Scaffold(
-        appBar: AppBar(
-          title: Center(
-            child: Text("ScanQR", style: theme.textTheme.displayMedium),
+      appBar: AppBar(
+        title: Center(
+          child: Text("ScanQR", style: theme.textTheme.displayMedium),
+        ),
+        iconTheme: theme.iconTheme,
+        actions: [
+          IconButton(
+            icon: Icon(
+              color: theme.iconTheme.color,
+              themeManager.themeMode == ThemeMode.dark
+                  ? Icons.dark_mode
+                  : Icons.light_mode,
+            ),
+            onPressed: () {
+              themeManager.toggleTheme();
+            },
           ),
-          iconTheme: theme.iconTheme,
-          actions: [
-            IconButton(
-              icon: Icon(
-                color: theme.iconTheme.color,
-                themeManager.themeMode == ThemeMode.dark
-                    ? Icons.dark_mode
-                    : Icons.light_mode,
-              ),
-              onPressed: () {
-                themeManager.toggleTheme();
-              },
+        ],
+      ),
+      body: Stack(
+        children: [
+          _buildQrView(context), // The QR code scanner view
+          Positioned(
+            bottom: 16.0,
+            left: 16.0,
+            right: 16.0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Custom button for Flash toggle
+                GestureDetector(
+                  onTap: () async {
+                    await controller?.toggleFlash();
+                    _updateFlashState();
+                  },
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.backgroundDark.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(
+                        isFlashOn
+                            ? FontAwesomeIcons.solidLightbulb
+                            : FontAwesomeIcons.lightbulb,
+                        size: 24,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+                // Custom button for Camera flip
+                GestureDetector(
+                  onTap: () async {
+                    await controller?.flipCamera();
+                    _updateCameraInfo();
+                  },
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.backgroundDark.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Icon(
+                        isFrontCamera
+                            ? FontAwesomeIcons.cameraRotate
+                            : FontAwesomeIcons.camera,
+                        size: 24,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        floatingActionButton: Row(
-          children: [
-            Positioned(
-              bottom: 16,
-              left: 16,
-              child: FloatingActionButton(
-                backgroundColor: AppColors.secondaryColor,
-                child: Icon(isFlashOn
-                  ? FontAwesomeIcons.solidLightbulb
-                  : FontAwesomeIcons.lightbulb),
-                onPressed: () async {
-                  await controller?.toggleFlash();
-                  _updateFlashState();
-                },
-              ),
-            ),
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: FloatingActionButton(
-                backgroundColor: AppColors.secondaryColor,
-                child: Icon(isFrontCamera
-                  ? FontAwesomeIcons.cameraRotate
-                  : FontAwesomeIcons.camera),
-                onPressed: () async {
-                  await controller?.flipCamera();
-                  _updateCameraInfo();
-                },
-              ),
-            ),
-          ],
-        ),
-        body: _buildQrView(context));
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildQrView(BuildContext context) {
