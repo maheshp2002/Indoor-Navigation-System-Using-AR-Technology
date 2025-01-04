@@ -20,7 +20,7 @@ class HomeState extends State<Home> {
       appBar: const CommonAppBar(
         title: 'DirectAr',
       ),
-      drawer: const NavBar(),
+      drawer: NavBar(),
       body: Center(
         child: Text(
           "Home",

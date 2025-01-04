@@ -1,3 +1,6 @@
+import 'package:directar/components/commonAppBar.dart';
+import 'package:directar/components/navbar.dart';
+import 'package:directar/theme.dart';
 import 'package:directar/unity/mapEditor.dart';
 import 'package:flutter/material.dart';
 import '3DModel.dart';
@@ -26,59 +29,63 @@ class AdminPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin Page')),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Colors.orange),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.admin_panel_settings,
-                      size: 60, color: Colors.white),
-                  SizedBox(height: 10),
-                  Text(
-                    'Admin Options',
-                    style: TextStyle(color: Colors.white, fontSize: 20),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.view_in_ar),
-              title: const Text('3D Model'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ThreeDModel()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.qr_code),
-              title: const Text('QR Codes'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const QrCode()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Sign Out'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SignInPage()),
-                );
-              },
-            ),
-          ],
-        ),
+      // drawer: Drawer(
+      //   child: ListView(
+      //     padding: EdgeInsets.zero,
+      //     children: [
+      //       DrawerHeader(
+      //         decoration: const BoxDecoration(color: Colors.orange),
+      //         child: Column(
+      //           mainAxisAlignment: MainAxisAlignment.center,
+      //           children: [
+      //             Icon(Icons.admin_panel_settings,
+      //                 size: 60, color: Colors.white),
+      //             SizedBox(height: 10),
+      //             Text(
+      //               'Admin Options',
+      //               style: TextStyle(color: Colors.white, fontSize: 20),
+      //             ),
+      //           ],
+      //         ),
+      //       ),
+
+      //       ListTile(
+      //         leading: const Icon(Icons.view_in_ar),
+      //         title: const Text('3D Model'),
+      //         onTap: () {
+      //           Navigator.push(
+      //             context,
+      //             MaterialPageRoute(builder: (context) => const ThreeDModel()),
+      //           );
+      //         },
+      //       ),
+      //       ListTile(
+      //         leading: const Icon(Icons.qr_code),
+      //         title: const Text('QR Codes'),
+      //         onTap: () {
+      //           Navigator.push(
+      //             context,
+      //             MaterialPageRoute(builder: (context) => const QrCode()),
+      //           );
+      //         },
+      //       ),
+      //       ListTile(
+      //         leading: const Icon(Icons.logout),
+      //         title: const Text('Sign Out'),
+      //         onTap: () {
+      //           Navigator.push(
+      //             context,
+      //             MaterialPageRoute(builder: (context) => SignInPage()),
+      //           );
+      //         },
+      //       ),
+      //     ],
+      //   ),
+      // ),
+      appBar: const CommonAppBar(
+        title: 'Admin Page',
       ),
+      drawer: NavBar(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -168,12 +175,13 @@ class AdminPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-           Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MapEditor(mapsDocumentId: null, mapsUrl: null, isEditMode: false)),
-                );
+          //  Navigator.push(
+          //         context,
+          //         MaterialPageRoute(builder: (context) => const MapEditor(mapsDocumentId: null, mapsUrl: null, isEditMode: false)),
+          //       );
         },
         child: const Icon(Icons.add),
+        backgroundColor: AppColors.secondaryColor,
       ),
     );
   }
