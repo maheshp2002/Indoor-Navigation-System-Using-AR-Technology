@@ -26,17 +26,23 @@ class HomeState extends State<Home> {
           "Home",
           style: theme.textTheme.bodyLarge,
         ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.secondaryColor,
-        child: const Icon(FontAwesomeIcons.qrcode),
-        onPressed: () {
-           Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const QRCodeScanning()),
-                );
-        },
-    ));
+        drawer: const NavBar(),
+        body: Center(
+          child: Text(
+            "Home",
+            style: theme.textTheme.bodyLarge,
+          ),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: AppColors.secondaryColor,
+          child: const Icon(FontAwesomeIcons.qrcode),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const QRCodeScanning()),
+            );
+          },
+        ));
   }
 }
