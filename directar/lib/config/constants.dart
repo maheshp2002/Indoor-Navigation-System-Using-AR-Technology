@@ -4,5 +4,6 @@ class AppConstants {
 }
 
 class FirebaseConstants {
- 
+  static const String usersCollection = 'users';
+  static const String mapsCollection = 'maps';
 }

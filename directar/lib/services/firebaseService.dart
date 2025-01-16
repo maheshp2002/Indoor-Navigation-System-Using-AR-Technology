@@ -13,14 +13,14 @@ class FirebaseService {
   }
 
   Future<void> updateMapDetails(
-      String userEmail, String collectionName, String mapsDocumentId, String newUrl) async {
+      String userEmail, String collectionName, String mapsDocumentId, String key, String value) async {
     await _firestore
         .collection('users')
         .doc(userEmail)
         .collection(collectionName)
         .doc(mapsDocumentId)
         .update({
-          'url': newUrl
+          key: value
         });
   }
 
@@ -55,5 +55,46 @@ class FirebaseService {
       return doc['role'] as String?;
     }
     return null;
+  }
+
+    // Fetch recent items
+  Future<List<Map<String, dynamic>>> fetchRecentItems(
+      String userEmail, String collectionName) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userEmail)
+        .collection(collectionName)
+        .orderBy('last_opened_time', descending: true)
+        .limit(5)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => {
+              'id': doc.id,
+              'date': doc['date'],
+              'time': doc['time'],
+              'url': doc['url'],
+              'lastOpenedTime': doc['last_opened_time'],
+            })
+        .toList();
+  }
+
+  // Fetch all files
+  Future<List<Map<String, dynamic>>> fetchAllFiles(
+      String userEmail, String collectionName) async {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userEmail)
+        .collection(collectionName)
+        .get();
+
+    return snapshot.docs
+        .map((doc) => {
+              'id': doc.id,
+              'date': doc['date'],
+              'url': doc['url'],
+              'time': doc['time'],
+            })
+        .toList();
   }
 }

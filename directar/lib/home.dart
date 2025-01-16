@@ -20,19 +20,12 @@ class HomeState extends State<Home> {
       appBar: const CommonAppBar(
         title: 'DirectAr',
       ),
-      drawer: NavBar(),
+      drawer: const NavBar(),
       body: Center(
         child: Text(
           "Home",
           style: theme.textTheme.bodyLarge,
-        ),
-        drawer: const NavBar(),
-        body: Center(
-          child: Text(
-            "Home",
-            style: theme.textTheme.bodyLarge,
-          ),
-        ),
+        )),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
           backgroundColor: AppColors.secondaryColor,

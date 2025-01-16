@@ -62,6 +62,7 @@ dependencies:
   ulid: ^2.0.1
   qr_code_scanner: ^1.0.1
   url_launcher: ^6.3.1
+  timeago: ^3.7.0
 
   # Unity
   flutter_unity_widget: ^2022.2.1

@@ -18,6 +18,9 @@ class AppColors {
   static const Color danger = Color(0xFFED3B3B);
   static const Color warning = Color(0xFFED9A3B);
   static const Color white = Color(0xFFFFFFFF);
+  static const Color transparentCardDark = Color(0xFF3B3B3B);
+  static const Color transparentCardLight = Color(0xFFE7E7E7);
+  static const Color transparent = Color(0x00FFFFFF);
 }
 
 class AppTextStyles {
@@ -58,6 +61,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
   final Color chipBackgroundColor;
   final Color dropdownBorderColor;
   final Color dropdownIconColor;
+  final Color borderColor;
+  final Color boxDecorationColor;
 
   AppThemeExtension(
       {required this.toggleButtonBorderColor,
@@ -68,7 +73,9 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       required this.modalBackgroundColor,
       required this.chipBackgroundColor,
       required this.dropdownBorderColor,
-      required this.dropdownIconColor});
+      required this.dropdownIconColor,
+      required this.borderColor,
+      required this.boxDecorationColor});
 
   @override
   AppThemeExtension copyWith(
@@ -80,7 +87,9 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       Color? modalBackgroundColor,
       Color? chipBackgroundColor,
       Color? dropdownBorderColor,
-      Color? dropdownIconColor}) {
+      Color? dropdownIconColor,
+      Color? borderColor,
+      Color? boxDecorationColor}) {
     return AppThemeExtension(
       toggleButtonBorderColor:
           toggleButtonBorderColor ?? this.toggleButtonBorderColor,
@@ -96,6 +105,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       chipBackgroundColor: chipBackgroundColor ?? this.chipBackgroundColor,
       dropdownBorderColor: dropdownBorderColor ?? this.dropdownBorderColor,
       dropdownIconColor: dropdownIconColor ?? this.dropdownIconColor,
+      borderColor: borderColor ?? this.borderColor,
+      boxDecorationColor: boxDecorationColor ?? this.boxDecorationColor,
     );
   }
 
@@ -123,6 +134,9 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
           Color.lerp(dropdownBorderColor, other.dropdownBorderColor, t)!,
       dropdownIconColor:
           Color.lerp(dropdownIconColor, other.dropdownIconColor, t)!,
+      borderColor: Color.lerp(borderColor, other.borderColor, t)!,
+      boxDecorationColor:
+          Color.lerp(boxDecorationColor, other.boxDecorationColor, t)!,
     );
   }
 }
@@ -139,7 +153,9 @@ class AppTheme {
           modalBackgroundColor: Colors.white70,
           chipBackgroundColor: Colors.white60,
           dropdownBorderColor: AppColors.secondaryColor,
-          dropdownIconColor: AppColors.secondaryColor),
+          dropdownIconColor: AppColors.secondaryColor,
+          borderColor: AppColors.secondaryColor,
+          boxDecorationColor: AppColors.transparentCardLight),
     ],
     dropdownMenuTheme: const DropdownMenuThemeData(),
     dialogBackgroundColor: AppColors.backgroundLight,
@@ -178,7 +194,9 @@ class AppTheme {
           modalBackgroundColor: Colors.black12,
           chipBackgroundColor: Colors.black87,
           dropdownBorderColor: Colors.white70,
-          dropdownIconColor: Colors.white70),
+          dropdownIconColor: Colors.white70,
+          borderColor: Colors.white,
+          boxDecorationColor: AppColors.transparentCardDark),
     ],
     iconTheme: const IconThemeData(color: Colors.white),
     dialogBackgroundColor: AppColors.backgroundDark,

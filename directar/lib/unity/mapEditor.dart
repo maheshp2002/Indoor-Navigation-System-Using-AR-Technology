@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:directar/components/Toast.dart';
+import 'package:directar/config/constants.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_unity_widget/flutter_unity_widget.dart';
@@ -10,13 +12,16 @@ import '../services/firebaseService.dart';
 import 'package:http/http.dart' as http;
 
 class MapEditor extends StatefulWidget {
-
   final String? mapsDocumentId;
   final String? mapsUrl;
   final bool isEditMode;
 
-  const MapEditor({super.key, required this.mapsDocumentId, required this.mapsUrl, required this.isEditMode});
-  
+  const MapEditor(
+      {super.key,
+      required this.mapsDocumentId,
+      required this.mapsUrl,
+      required this.isEditMode});
+
   @override
   MapEditorState createState() => MapEditorState();
 }
@@ -71,24 +76,23 @@ class MapEditorState extends State<MapEditor> {
     super.initState();
     _mapsDocumentId = widget.mapsDocumentId;
     _mapsUrl = widget.mapsUrl;
-
-    if (widget.isEditMode && _mapsUrl != null && _mapsUrl != null) {
-     _loadInitialSceneFromUrl(widget.mapsUrl!);
-    }
   }
 
   Future<void> _loadInitialSceneFromUrl(String mapsUrl) async {
     try {
+      // Use `http` to fetch the file via the download URL
       final response = await http.get(Uri.parse(mapsUrl));
+
       if (response.statusCode == 200) {
         final base64String = base64Encode(response.bodyBytes);
         _unityController.postMessage(
             'SceneController', 'ImportSceneFromBase64', base64String);
       } else {
-        print("Failed to download map zip file: ${response.statusCode}");
+        showToast('Internal Server Error', isSuccess: false);
       }
     } catch (e) {
-      print("Error loading initial scene: $e");
+      print('Error loading initial scene: $e');
+      showToast('Internal Server Error', isSuccess: false);
     }
   }
 
@@ -107,7 +111,7 @@ class MapEditorState extends State<MapEditor> {
             ),
           ),
           AnimatedContainer(
-            duration: Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 300),
             width: _isHelpVisible ? 300 : 50,
             child: Column(
               children: [
@@ -124,7 +128,7 @@ class MapEditorState extends State<MapEditor> {
                 if (_isHelpVisible)
                   Expanded(
                     child: Container(
-                      padding: EdgeInsets.all(10),
+                      padding: const EdgeInsets.all(10),
                       color: Colors.grey[200],
                       child: ListView.builder(
                         itemCount: controls.length,
@@ -178,6 +182,10 @@ class MapEditorState extends State<MapEditor> {
   void onUnityCreated(UnityWidgetController controller) {
     _unityController = controller;
     _isUnityReady = true;
+
+    if (widget.isEditMode && _mapsUrl != null && _mapsUrl != null) {
+      _loadInitialSceneFromUrl(widget.mapsUrl!);
+    }
   }
 
   Future<void> onUnityMessage(dynamic message) async {
@@ -190,17 +198,17 @@ class MapEditorState extends State<MapEditor> {
         await uploadToFirebase(
           email: email!,
           base64Data: zipBase64,
-          storagePath: 'maps',
+          storagePath: FirebaseConstants.mapsCollection,
           fileExtension: 'zip',
-          firestoreCollection: 'maps',
+          firestoreCollection: FirebaseConstants.mapsCollection,
         );
-      } 
+      }
     }
   }
 
   void _importObject() async {
     if (!_isUnityReady) {
-      print("Unity is not ready.");
+      showToast("Unity is not ready.");
       return;
     }
 
@@ -221,7 +229,7 @@ class MapEditorState extends State<MapEditor> {
         print('Failed to retrieve file bytes.');
       }
     } else {
-      print('File picking was canceled.');
+      showToast('File picking was canceled.');
     }
   }
 
@@ -229,7 +237,7 @@ class MapEditorState extends State<MapEditor> {
     if (_isUnityReady) {
       _unityController.postMessage('SceneController', 'ShowUnityUI', '');
     } else {
-      print("Unity is not ready.");
+      showToast("Unity is not ready.");
     }
   }
 
@@ -237,7 +245,7 @@ class MapEditorState extends State<MapEditor> {
     if (_isUnityReady) {
       _unityController.postMessage('SceneController', 'HideMeshRenderer', '');
     } else {
-      print("Unity is not ready.");
+      showToast("Unity is not ready.");
     }
   }
 
@@ -246,13 +254,13 @@ class MapEditorState extends State<MapEditor> {
       _unityController.postMessage(
           'SceneController', 'DeleteSelectedObject', '');
     } else {
-      print("Unity is not ready.");
+      showToast("Unity is not ready.");
     }
   }
 
   void _exportScene() {
     if (!_isUnityReady) {
-      print("Unity is not ready.");
+      showToast("Unity is not ready.");
       return;
     }
 
@@ -261,7 +269,7 @@ class MapEditorState extends State<MapEditor> {
 
   void _importScene() async {
     if (!_isUnityReady) {
-      print("Unity is not ready.");
+      showToast("Unity is not ready.");
       return;
     }
 
@@ -284,7 +292,7 @@ class MapEditorState extends State<MapEditor> {
         print("Failed to retrieve file bytes.");
       }
     } else {
-      print("No file selected.");
+      showToast("No file selected.");
     }
   }
 
@@ -309,13 +317,12 @@ class MapEditorState extends State<MapEditor> {
   void _generateQr() async {
     if (_isUnityReady) {
       String? sceneAccessURL = await _getMapZipUrl();
-      if(sceneAccessURL != null) {
-        print(sceneAccessURL);
+      if (sceneAccessURL != null) {
         _unityController.postMessage(
             'SceneController', 'ExportSceneAndGenerateQR', sceneAccessURL);
       }
     } else {
-      print("Unity is not ready.");
+      showToast("Unity is not ready.");
     }
   }
 
@@ -330,7 +337,6 @@ class MapEditorState extends State<MapEditor> {
       // Delete existing file
       final fileRef = FirebaseStorage.instance.refFromURL(_mapsUrl!);
       await fileRef.delete();
-      print("Deleted previous map zip file.");
     }
 
     // Generate a unique file name
@@ -347,16 +353,21 @@ class MapEditorState extends State<MapEditor> {
 
     // Save the file details to Firestore
     final now = DateTime.now();
+    final date =
+        "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    final time =
+        "${now.hour % 12 == 0 ? 12 : now.hour % 12}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'PM' : 'AM'}";
 
     if (!widget.isEditMode && _mapsDocumentId == null && _mapsUrl == null) {
       final Map<String, dynamic> data = {
         'url': fileUrl,
-        'date': now.toIso8601String(),
-        'time': now.millisecondsSinceEpoch,
-        'last_opened_time': now.toIso8601String()
+        'date': date,
+        'time': time,
+        'last_opened_time': now.toIso8601String(),
       };
 
-      final docRef = await _firebaseService.saveMapDetails(email, firestoreCollection, data);
+      final docRef = await _firebaseService.saveMapDetails(
+          email, firestoreCollection, data);
       final documentId = docRef.id;
 
       // Store the documentId in the state
@@ -364,7 +375,8 @@ class MapEditorState extends State<MapEditor> {
         _mapsDocumentId = documentId;
       });
     } else {
-      await _firebaseService.updateMapDetails(email, firestoreCollection, _mapsDocumentId!, fileUrl);
+      await _firebaseService.updateMapDetails(
+          email, firestoreCollection, _mapsDocumentId!, 'url', fileUrl);
     }
 
     // Store the fileUrl in the state
