@@ -1,5 +1,9 @@
+import 'package:directar/components/commonAppBar.dart';
+import 'package:directar/components/navbar.dart';
+import 'package:directar/theme.dart';
 import 'package:directar/unity/mapEditor.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '3DModel.dart';
 import 'QR_Code.dart';
 import 'sign.dart';
@@ -10,6 +14,7 @@ class AdminPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final recentItems = [
       {
         'image': 'assets/images/object.png',
@@ -26,59 +31,10 @@ class AdminPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin Page')),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Colors.orange),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.admin_panel_settings,
-                      size: 60, color: Colors.white),
-                  SizedBox(height: 10),
-                  Text(
-                    'Admin Options',
-                    style: TextStyle(color: Colors.white, fontSize: 20),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.view_in_ar),
-              title: const Text('3D Model'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ThreeDModel()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.qr_code),
-              title: const Text('QR Codes'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const QrCode()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Sign Out'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => SignInPage()),
-                );
-              },
-            ),
-          ],
-        ),
+      appBar: const CommonAppBar(
+        title: 'Admin Page',
       ),
+      drawer: NavBar(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -105,24 +61,57 @@ class AdminPage extends StatelessWidget {
                         ),
                       );
                     },
+                    // child: Card(
+                    //   margin: const EdgeInsets.symmetric(horizontal: 8.0),
+                    //   child: Column(
+                    //     crossAxisAlignment: CrossAxisAlignment.start,
+                    //     children: [
+                    //       Image.asset(
+                    //         item['image']!,
+                    //         fit: BoxFit.cover,
+                    //         height: 100,
+                    //         width: 200,
+                    //       ),
+
+                    //       Padding(
+                    //         padding: const EdgeInsets.all(8),
+                    //         child: Text(
+                    //           item['description']!,
+                    //           style: const TextStyle(
+                    //             fontSize: 12,
+                    //             fontWeight: FontWeight.bold,
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
                     child: Card(
                       margin: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Image.asset(
-                            item['image']!,
+                            item['image'] ??
+                                '', // Provide a fallback if the key is null
                             fit: BoxFit.cover,
                             height: 100,
                             width: 200,
                           ),
                           Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Text(
-                              item['description']!,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
+                            padding: const EdgeInsets.all(0),
+                            child: Container(
+                              color: AppColors
+                                  .secondaryColor, // Set background color
+                              padding: const EdgeInsets.all(
+                                  4.0), // Optional padding for better spacing
+                              child: Text(
+                                item['description'] ??
+                                    'No description available', // Fallback text
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -145,9 +134,12 @@ class AdminPage extends StatelessWidget {
                 itemCount: 10,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    leading: const Icon(Icons.insert_drive_file),
-                    title: Text('File ${index + 1}'),
-                    subtitle: Text('Details about file ${index + 1}.'),
+                    leading: Icon(FontAwesomeIcons.file,
+                        color: theme.iconTheme.color),
+                    title: Text('File ${index + 1}',
+                        style: theme.textTheme.bodyLarge),
+                    subtitle: Text('Details about file ${index + 1}.',
+                        style: theme.textTheme.bodyLarge),
                     onTap: () {
                       Navigator.push(
                         context,
@@ -168,12 +160,13 @@ class AdminPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-           Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MapEditor(mapsDocumentId: null, mapsUrl: null, isEditMode: false)),
-                );
+          //  Navigator.push(
+          //         context,
+          //         MaterialPageRoute(builder: (context) => const MapEditor(mapsDocumentId: null, mapsUrl: null, isEditMode: false)),
+          //       );
         },
         child: const Icon(Icons.add),
+        backgroundColor: AppColors.secondaryColor,
       ),
     );
   }

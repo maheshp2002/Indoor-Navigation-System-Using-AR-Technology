@@ -17,8 +17,14 @@ class HomeState extends State<Home> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-        appBar: const CommonAppBar(
-          title: 'DirectAr',
+      appBar: const CommonAppBar(
+        title: 'DirectAr',
+      ),
+      drawer: NavBar(),
+      body: Center(
+        child: Text(
+          "Home",
+          style: theme.textTheme.bodyLarge,
         ),
         drawer: const NavBar(),
         body: Center(
