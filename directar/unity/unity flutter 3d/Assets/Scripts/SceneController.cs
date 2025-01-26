@@ -574,7 +574,8 @@ public class SceneController : MonoBehaviour
                         type = "NavigationLine",
                         label = obj.GetComponentInChildren<TextMeshPro>()?.text ?? "",
                         isSource = obj.GetComponent<NavigationPoint>()?.IsSource ?? false,
-                        isDestination = obj.GetComponent<NavigationPoint>()?.IsDestination ?? false
+                        isDestination = obj.GetComponent<NavigationPoint>()?.IsDestination ?? false,
+                        name = obj.name
                     };
                     sceneData.objects.Add(navData);
                 }
@@ -586,9 +587,10 @@ public class SceneController : MonoBehaviour
                         position = obj.transform.position,
                         rotation = obj.transform.rotation,
                         scale = obj.transform.localScale,
-                        type = obj.name,
+                        type = "ImportedObject",
                         isSource = false,
-                        isDestination = false
+                        isDestination = false,
+                        name = obj.name
                     };
                     sceneData.objects.Add(objData);
                 }
@@ -750,16 +752,19 @@ public class SceneController : MonoBehaviour
             // Load objects from metadata
             foreach (var objData in sceneData.objects)
             {
+               Debug.Log($"objData.type {objData.type}");
                 if (objData.type == "NavigationLine")
                 {
                     GameObject navPoint = Instantiate(navigationPointPrefab, objData.position, objData.rotation);
                     navPoint.transform.localScale = objData.scale;
                     var textMesh = navPoint.GetComponentInChildren<TextMeshPro>();
                     textMesh.text = objData.label;
+                    navPoint.tag = objData.type;
+                    navPoint.name = objData.name;
                 }
                 else
                 {
-                    string modelPath = Path.Combine(tempFolder, $"{objData.type}.obj");
+                    string modelPath = Path.Combine(tempFolder, $"{objData.name}.obj");
 
                     if (File.Exists(modelPath))
                     {
@@ -776,8 +781,8 @@ public class SceneController : MonoBehaviour
                                 importedModel.transform.position = objData.position;
                                 importedModel.transform.rotation = objData.rotation;
                                 importedModel.transform.localScale = objData.scale;
-                                importedModel.tag = "ImportedObject";
-                                importedModel.name = objData.type;
+                                importedModel.tag = objData.type;
+                                importedModel.name = objData.name;
 
                                 // Ensure the object has a collider
                                 AddCollidersRecursively(meshObject);
@@ -871,6 +876,7 @@ public class SceneController : MonoBehaviour
         public string label;
         public bool isSource;
         public bool isDestination;
+        public string name;
     }
 }
 

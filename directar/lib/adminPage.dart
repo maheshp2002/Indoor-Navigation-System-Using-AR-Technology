@@ -192,8 +192,8 @@ class _HoverableCard extends StatefulWidget {
   const _HoverableCard({
     required this.item,
     required this.onTap,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<_HoverableCard> createState() => _HoverableCardState();

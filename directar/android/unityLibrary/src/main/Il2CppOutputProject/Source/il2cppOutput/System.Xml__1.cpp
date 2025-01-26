@@ -8213,7 +8213,7 @@ IL_0066:
 		int32_t L_26 = L_25->___charPos;
 		NullCheck(L_22);
 		int32_t L_27;
-		L_27 = VirtualFuncInvoker3< int32_t, CharU5BU5D_t799905CF001DD5F13F7DBB310181FC4D8B7D0AAB*, int32_t, int32_t >::Invoke(13, L_22, L_24, 0, L_26);
+		L_27 = VirtualFuncInvoker3< int32_t, CharU5BU5D_t799905CF001DD5F13F7DBB310181FC4D8B7D0AAB*, int32_t, int32_t >::Invoke(12, L_22, L_24, 0, L_26);
 		*((int32_t*)L_19) = (int32_t)((int32_t)il2cpp_codegen_add(L_20, L_27));
 	}
 
@@ -9440,7 +9440,7 @@ IL_019a:
 		Encoding_t65CDEF28CF20A7B8C92E85A4E808920C2465F095* L_79 = L_78->___encoding;
 		NullCheck(L_79);
 		int32_t L_80;
-		L_80 = VirtualFuncInvoker1< int32_t, String_t* >::Invoke(12, L_79, _stringLiteralEF420ABFDDBDA7B9EE665D85EF62E4A437554003);
+		L_80 = VirtualFuncInvoker1< int32_t, String_t* >::Invoke(11, L_79, _stringLiteralEF420ABFDDBDA7B9EE665D85EF62E4A437554003);
 		if ((((int32_t)L_80) == ((int32_t)1)))
 		{
 			G_B33_0 = _stringLiteralE1A5710D77750DE15143DC722BD4D7F361D7E8BD;
@@ -10327,7 +10327,7 @@ IL_07ef:
 		Encoding_t65CDEF28CF20A7B8C92E85A4E808920C2465F095* L_333 = L_332->___encoding;
 		NullCheck(L_333);
 		int32_t L_334;
-		L_334 = VirtualFuncInvoker1< int32_t, String_t* >::Invoke(12, L_333, _stringLiteralEF420ABFDDBDA7B9EE665D85EF62E4A437554003);
+		L_334 = VirtualFuncInvoker1< int32_t, String_t* >::Invoke(11, L_333, _stringLiteralEF420ABFDDBDA7B9EE665D85EF62E4A437554003);
 		if ((((int32_t)L_334) == ((int32_t)1)))
 		{
 			G_B124_0 = _stringLiteralE1A5710D77750DE15143DC722BD4D7F361D7E8BD;

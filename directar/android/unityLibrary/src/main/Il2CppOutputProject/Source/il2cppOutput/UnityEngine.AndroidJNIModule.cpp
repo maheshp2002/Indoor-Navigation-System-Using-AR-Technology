@@ -16690,7 +16690,7 @@ IL_0047:
 			STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 2245));
 			NullCheck(L_23);
 			MethodInfoU5BU5D_tDF3670604A0AECF814A0B0BA09B91FBF0D6A3265* L_25;
-			L_25 = VirtualFuncInvoker1< MethodInfoU5BU5D_tDF3670604A0AECF814A0B0BA09B91FBF0D6A3265*, int32_t >::Invoke(101, L_23, L_24);
+			L_25 = VirtualFuncInvoker1< MethodInfoU5BU5D_tDF3670604A0AECF814A0B0BA09B91FBF0D6A3265*, int32_t >::Invoke(105, L_23, L_24);
 			CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 2245));
 			V_12 = L_25;
 			CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 2246));
@@ -24054,7 +24054,7 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR intptr_t _AndroidJNIHelper_ConvertToJNIArray_
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 4565));
 		NullCheck(L_1);
 		Type_t* L_2;
-		L_2 = VirtualFuncInvoker0< Type_t* >::Invoke(46, L_1);
+		L_2 = VirtualFuncInvoker0< Type_t* >::Invoke(47, L_1);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 4565));
 		V_0 = L_2;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 4566));
@@ -25928,7 +25928,7 @@ IL_002a:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5027));
 		NullCheck(L_9);
 		bool L_12;
-		L_12 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_9, L_11);
+		L_12 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_9, L_11);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5027));
 		V_4 = L_12;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5028));
@@ -25957,7 +25957,7 @@ IL_005a:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5032));
 		NullCheck(L_14);
 		bool L_17;
-		L_17 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_14, L_16);
+		L_17 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_14, L_16);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5032));
 		V_5 = L_17;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5033));
@@ -25986,7 +25986,7 @@ IL_007b:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5037));
 		NullCheck(L_19);
 		bool L_22;
-		L_22 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_19, L_21);
+		L_22 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_19, L_21);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5037));
 		V_6 = L_22;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5038));
@@ -26021,7 +26021,7 @@ IL_00a8:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5045));
 		NullCheck(L_24);
 		bool L_27;
-		L_27 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_24, L_26);
+		L_27 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_24, L_26);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5045));
 		V_7 = L_27;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5046));
@@ -26050,7 +26050,7 @@ IL_00c9:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5050));
 		NullCheck(L_29);
 		bool L_32;
-		L_32 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_29, L_31);
+		L_32 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_29, L_31);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5050));
 		V_8 = L_32;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5051));
@@ -26079,7 +26079,7 @@ IL_00ea:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5055));
 		NullCheck(L_34);
 		bool L_37;
-		L_37 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_34, L_36);
+		L_37 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_34, L_36);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5055));
 		V_9 = L_37;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5056));
@@ -26108,7 +26108,7 @@ IL_010b:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5060));
 		NullCheck(L_39);
 		bool L_42;
-		L_42 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_39, L_41);
+		L_42 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_39, L_41);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5060));
 		V_10 = L_42;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5061));
@@ -26137,7 +26137,7 @@ IL_012c:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5065));
 		NullCheck(L_44);
 		bool L_47;
-		L_47 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_44, L_46);
+		L_47 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_44, L_46);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5065));
 		V_11 = L_47;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5066));
@@ -26166,7 +26166,7 @@ IL_014d:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5070));
 		NullCheck(L_49);
 		bool L_52;
-		L_52 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_49, L_51);
+		L_52 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_49, L_51);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5070));
 		V_12 = L_52;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5071));
@@ -26202,7 +26202,7 @@ IL_0174:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5077));
 		NullCheck(L_54);
 		bool L_57;
-		L_57 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_54, L_56);
+		L_57 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_54, L_56);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5077));
 		V_13 = L_57;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5078));
@@ -26368,7 +26368,7 @@ IL_021a:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5103));
 		NullCheck(L_78);
 		bool L_81;
-		L_81 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_78, L_80);
+		L_81 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_78, L_80);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5103));
 		V_17 = L_81;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5104));
@@ -26398,7 +26398,7 @@ IL_023c:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5109));
 		NullCheck(L_83);
 		bool L_86;
-		L_86 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_83, L_85);
+		L_86 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_83, L_85);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5109));
 		V_18 = L_86;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5110));
@@ -26428,7 +26428,7 @@ IL_025e:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5115));
 		NullCheck(L_88);
 		bool L_91;
-		L_91 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(125, L_88, L_90);
+		L_91 = VirtualFuncInvoker1< bool, Type_t* >::Invoke(129, L_88, L_90);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5115));
 		V_19 = L_91;
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5116));
@@ -26564,7 +26564,7 @@ IL_02da:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5140));
 		NullCheck(L_111);
 		int32_t L_112;
-		L_112 = VirtualFuncInvoker0< int32_t >::Invoke(47, L_111);
+		L_112 = VirtualFuncInvoker0< int32_t >::Invoke(48, L_111);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5140));
 		V_25 = (bool)((((int32_t)((((int32_t)L_112) == ((int32_t)1))? 1 : 0)) == ((int32_t)0))? 1 : 0);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5141));
@@ -26605,7 +26605,7 @@ IL_030f:
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5150));
 		NullCheck(L_119);
 		Type_t* L_120;
-		L_120 = VirtualFuncInvoker0< Type_t* >::Invoke(46, L_119);
+		L_120 = VirtualFuncInvoker0< Type_t* >::Invoke(47, L_119);
 		CHECK_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5150));
 		STORE_SEQ_POINT(methodExecutionContext, (g_sequencePointsUnityEngine_AndroidJNIModule + 5151));
 		String_t* L_121;

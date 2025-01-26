@@ -2517,7 +2517,7 @@ IL_001b:
 		ByteU5BU5D_tA6237BF417AE52AD70CFB4EF24A7A82613DF9031* L_8 = __this->____largeByteBuffer;
 		NullCheck(L_4);
 		int32_t L_9;
-		L_9 = VirtualFuncInvoker5< int32_t, String_t*, int32_t, int32_t, ByteU5BU5D_tA6237BF417AE52AD70CFB4EF24A7A82613DF9031*, int32_t >::Invoke(20, L_4, L_5, 0, L_7, L_8, 0);
+		L_9 = VirtualFuncInvoker5< int32_t, String_t*, int32_t, int32_t, ByteU5BU5D_tA6237BF417AE52AD70CFB4EF24A7A82613DF9031*, int32_t >::Invoke(19, L_4, L_5, 0, L_7, L_8, 0);
 		BinaryWriter_tFB94D67EDFA3F6A34744A163BDABE287FDF2ED1E* L_10 = __this->____writer;
 		ByteU5BU5D_tA6237BF417AE52AD70CFB4EF24A7A82613DF9031* L_11 = __this->____largeByteBuffer;
 		int32_t L_12 = ___1_byteCount;
@@ -2533,7 +2533,7 @@ IL_0051:
 		String_t* L_14 = ___0_s;
 		NullCheck(L_13);
 		ByteU5BU5D_tA6237BF417AE52AD70CFB4EF24A7A82613DF9031* L_15;
-		L_15 = VirtualFuncInvoker1< ByteU5BU5D_tA6237BF417AE52AD70CFB4EF24A7A82613DF9031*, String_t* >::Invoke(19, L_13, L_14);
+		L_15 = VirtualFuncInvoker1< ByteU5BU5D_tA6237BF417AE52AD70CFB4EF24A7A82613DF9031*, String_t* >::Invoke(18, L_13, L_14);
 		V_0 = L_15;
 		BinaryWriter_tFB94D67EDFA3F6A34744A163BDABE287FDF2ED1E* L_16 = __this->____writer;
 		ByteU5BU5D_tA6237BF417AE52AD70CFB4EF24A7A82613DF9031* L_17 = V_0;
@@ -2984,7 +2984,7 @@ IL_0165:
 		String_t* L_55 = V_12;
 		NullCheck(L_54);
 		int32_t L_56;
-		L_56 = VirtualFuncInvoker1< int32_t, String_t* >::Invoke(12, L_54, L_55);
+		L_56 = VirtualFuncInvoker1< int32_t, String_t* >::Invoke(11, L_54, L_55);
 		G_B26_0 = L_56;
 		G_B26_1 = G_B25_0;
 	}

@@ -1,14 +1,12 @@
-import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'package:directar/home.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
-import 'package:http/http.dart' as http;
 import 'components/themeManager.dart';
 import 'theme.dart';
+import 'unity/userNavigation.dart';
 
 class QRCodeScanning extends StatefulWidget {
   const QRCodeScanning({super.key});
@@ -23,6 +21,7 @@ class QRCodeScanningState extends State<QRCodeScanning> {
   String? result;
   bool isFlashOn = false;
   bool isFrontCamera = false;
+  bool isScannerActive = true; 
 
   @override
   void reassemble() {
@@ -55,28 +54,22 @@ class QRCodeScanningState extends State<QRCodeScanning> {
     _updateFlashState();
     _updateCameraInfo();
 
-    controller.scannedDataStream.listen((scanData) {
-      setState(() {
-        result = scanData.code.toString();
-      });
-      _loadInitialSceneFromUrl(scanData.code.toString());
+    controller.scannedDataStream.listen((scanData) async {
+      if (isScannerActive) {
+        setState(() {
+          isScannerActive = false;
+          result = scanData.code.toString();
+        });
+        await _loadInitialSceneFromUrl(scanData.code.toString());
+      }
     });
   }
 
   Future<void> _loadInitialSceneFromUrl(String mapsUrl) async {
-    try {
-      final response = await http.get(Uri.parse(mapsUrl));
-      if (response.statusCode == 200) {
-        var base64 = base64Encode(response.bodyBytes);
-        result = base64;
-        Navigator.pop(
+      Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const Home()),
-        );
-      }
-    } catch (e) {
-      print("Error loading initial scene: $e");
-    }
+          MaterialPageRoute(builder: (context) => UserNavigation(mapsUrl: mapsUrl)),
+      );
   }
 
   @override

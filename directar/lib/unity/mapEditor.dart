@@ -82,9 +82,10 @@ class MapEditorState extends State<MapEditor> {
     try {
       // Use `http` to fetch the file via the download URL
       final response = await http.get(Uri.parse(mapsUrl));
-
+      print("haha ${response}");
       if (response.statusCode == 200) {
         final base64String = base64Encode(response.bodyBytes);
+              print("haha ${base64String}");
         _unityController.postMessage(
             'SceneController', 'ImportSceneFromBase64', base64String);
       } else {
@@ -100,7 +101,7 @@ class MapEditorState extends State<MapEditor> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Map 3D Editor'),
+        title: const Text('Map 3D Editor'),
       ),
       body: Row(
         children: [
@@ -148,44 +149,54 @@ class MapEditorState extends State<MapEditor> {
         children: [
           ElevatedButton(
             onPressed: _importObject,
-            child: Text("Import Object"),
+            child: const Text("Import Object"),
           ),
           ElevatedButton(
             onPressed: _showUnityUI,
-            child: Text("Add Navigation Point"),
+            child: const Text("Add Navigation Point"),
           ),
           ElevatedButton(
             onPressed: _hideObject,
-            child: Text("Hide Object"),
+            child: const Text("Hide Object"),
           ),
           ElevatedButton(
             onPressed: _deleteObject,
-            child: Text("Delete Object"),
+            child: const Text("Delete Object"),
           ),
           ElevatedButton(
             onPressed: _exportScene,
-            child: Text("Export Scene"),
+            child: const Text("Export Scene"),
           ),
           ElevatedButton(
             onPressed: _importScene,
-            child: Text("Import Scene"),
+            child: const Text("Import Scene"),
           ),
           ElevatedButton(
             onPressed: _generateQr,
-            child: Text("Generate QR"),
+            child: const Text("Generate QR"),
           ),
         ],
       ),
     );
   }
 
+  void initUnity(bool isAdmin) {
+    _unityController.postMessage(
+        "CanvasManager",
+        "SetMode",
+        isAdmin.toString()
+    );
+  }
+
   void onUnityCreated(UnityWidgetController controller) {
     _unityController = controller;
     _isUnityReady = true;
-
-    if (widget.isEditMode && _mapsUrl != null && _mapsUrl != null) {
-      _loadInitialSceneFromUrl(widget.mapsUrl!);
-    }
+    Future.delayed(Duration(seconds: 1), () {
+        initUnity(false);
+        if (widget.isEditMode && _mapsUrl != null) {
+            _loadInitialSceneFromUrl(_mapsUrl!);
+        }
+    });
   }
 
   Future<void> onUnityMessage(dynamic message) async {

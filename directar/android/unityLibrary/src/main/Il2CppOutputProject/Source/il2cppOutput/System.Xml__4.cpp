@@ -1102,7 +1102,6 @@ IL2CPP_EXTERN_C const RuntimeMethod* Ucs4Encoding3412_get_EncodingName_mF3A35063
 IL2CPP_EXTERN_C const RuntimeMethod* Ucs4Encoding4321_GetPreamble_m05B83E8018B6F366014E4B549B7BD5F5B0FA997A_RuntimeMethod_var;
 IL2CPP_EXTERN_C const RuntimeMethod* Ucs4Encoding4321__ctor_m39191761F994823FD46F2DC0179466D44653B804_RuntimeMethod_var;
 IL2CPP_EXTERN_C const RuntimeMethod* Ucs4Encoding4321_get_EncodingName_m420997A7DF142A1FA730C071D82D884C73B28E83_RuntimeMethod_var;
-IL2CPP_EXTERN_C const RuntimeMethod* Ucs4Encoding_GetByteCount_m17B361EEF8E2A4985D1C68BDE55B7657C76DEAAE_RuntimeMethod_var;
 IL2CPP_EXTERN_C const RuntimeMethod* Ucs4Encoding_GetByteCount_m4E59CE9E039D4978C6934A0AB932A272A66F9595_RuntimeMethod_var;
 IL2CPP_EXTERN_C const RuntimeMethod* Ucs4Encoding_GetBytes_m65346A1C8565F9980A22114E6C050266CF13EDEF_RuntimeMethod_var;
 IL2CPP_EXTERN_C const RuntimeMethod* Ucs4Encoding_GetBytes_m9FD0DEDCE13E104319445ABBA873E5D343EAC6D5_RuntimeMethod_var;
@@ -15106,22 +15105,6 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR int32_t Ucs4Encoding_GetByteCount_m4E59CE9E03
 		if (((int64_t)L_0 * (int64_t)4 < (int64_t)kIl2CppInt32Min) || ((int64_t)L_0 * (int64_t)4 > (int64_t)kIl2CppInt32Max))
 			IL2CPP_RAISE_MANAGED_EXCEPTION(il2cpp_codegen_get_overflow_exception(), Ucs4Encoding_GetByteCount_m4E59CE9E039D4978C6934A0AB932A272A66F9595_RuntimeMethod_var);
 		return ((int32_t)il2cpp_codegen_multiply(L_0, 4));
-	}
-}
-IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR int32_t Ucs4Encoding_GetByteCount_m17B361EEF8E2A4985D1C68BDE55B7657C76DEAAE (Ucs4Encoding_t14CCEC5401979A4752F6F04C62D41054472D415B* __this, CharU5BU5D_t799905CF001DD5F13F7DBB310181FC4D8B7D0AAB* ___0_chars, const RuntimeMethod* method) 
-{
-	static bool s_Il2CppMethodInitialized;
-	if (!s_Il2CppMethodInitialized)
-	{
-		il2cpp_codegen_initialize_runtime_metadata((uintptr_t*)&Ucs4Encoding_GetByteCount_m17B361EEF8E2A4985D1C68BDE55B7657C76DEAAE_RuntimeMethod_var);
-		s_Il2CppMethodInitialized = true;
-	}
-	DECLARE_METHOD_EXEC_CTX(methodExecutionContext, Ucs4Encoding_GetByteCount_m17B361EEF8E2A4985D1C68BDE55B7657C76DEAAE_RuntimeMethod_var, NULL, NULL, NULL);
-	CHECK_PAUSE_POINT;
-	{
-		CharU5BU5D_t799905CF001DD5F13F7DBB310181FC4D8B7D0AAB* L_0 = ___0_chars;
-		NullCheck(L_0);
-		return ((int32_t)il2cpp_codegen_multiply(((int32_t)(((RuntimeArray*)L_0)->max_length)), 4));
 	}
 }
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR ByteU5BU5D_tA6237BF417AE52AD70CFB4EF24A7A82613DF9031* Ucs4Encoding_GetBytes_m65346A1C8565F9980A22114E6C050266CF13EDEF (Ucs4Encoding_t14CCEC5401979A4752F6F04C62D41054472D415B* __this, String_t* ___0_s, const RuntimeMethod* method) 

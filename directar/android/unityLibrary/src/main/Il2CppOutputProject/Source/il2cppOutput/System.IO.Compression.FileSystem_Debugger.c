@@ -47,8 +47,8 @@ Il2CppSequencePoint g_sequencePointsSystem_IO_Compression_FileSystem[1] = { { 0,
 #endif
 #if IL2CPP_MONO_DEBUGGER
 static const Il2CppCatchPoint g_catchPoints[] = {
-{ 43115, 8446, 86, 0, -1 },
-{ 43117, 10634, 84, 0, -1 },
+{ 82702, 15465, 86, 0, -1 },
+{ 82704, 19064, 84, 0, -1 },
 };
 #else
 static const Il2CppCatchPoint g_catchPoints[1] = { { 0, 0, 0, 0, } };
