@@ -2,12 +2,15 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:directar/components/Toast.dart';
 import 'package:directar/config/constants.dart';
+import 'package:directar/theme.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_unity_widget/flutter_unity_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:ulid/ulid.dart';
+import '../components/commonAppBar.dart';
+import '../components/roundedButton.dart';
 import '../services/firebaseService.dart';
 import 'package:http/http.dart' as http;
 
@@ -70,7 +73,6 @@ class MapEditorState extends State<MapEditor> {
     'R: Right View',
     'Back: Back View',
   ];
-
   @override
   void initState() {
     super.initState();
@@ -82,10 +84,8 @@ class MapEditorState extends State<MapEditor> {
     try {
       // Use `http` to fetch the file via the download URL
       final response = await http.get(Uri.parse(mapsUrl));
-      print("haha ${response}");
       if (response.statusCode == 200) {
         final base64String = base64Encode(response.bodyBytes);
-              print("haha ${base64String}");
         _unityController.postMessage(
             'SceneController', 'ImportSceneFromBase64', base64String);
       } else {
@@ -99,9 +99,19 @@ class MapEditorState extends State<MapEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final appThemeExtension = Theme.of(context).extension<AppThemeExtension>();
+    final List<Map<String, dynamic>> buttonList = [
+      {'text': "Import Object", 'onPressed': _importObject},
+      {'text': "Add Navigation Point", 'onPressed': _showUnityUI},
+      {'text': "Hide Object", 'onPressed': _hideObject},
+      {'text': "Export Scene", 'onPressed': _exportScene},
+      {'text': "Import Scene", 'onPressed': _importScene},
+      {'text': "Generate QR", 'onPressed': _generateQr},
+    ];
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Map 3D Editor'),
+      appBar: const CommonAppBar(
+        title: 'Maps 3D Editor',
       ),
       body: Row(
         children: [
@@ -129,12 +139,18 @@ class MapEditorState extends State<MapEditor> {
                 if (_isHelpVisible)
                   Expanded(
                     child: Container(
+                      decoration: BoxDecoration(
+                        color: appThemeExtension?.modalBackgroundColor ??
+                            AppColors.transparent,
+                      ),
                       padding: const EdgeInsets.all(10),
-                      color: Colors.grey[200],
                       child: ListView.builder(
                         itemCount: controls.length,
                         itemBuilder: (context, index) {
-                          return Text(controls[index]);
+                          return Text(
+                            controls[index],
+                            style: const TextStyle(color: AppColors.white),
+                          );
                         },
                       ),
                     ),
@@ -144,58 +160,58 @@ class MapEditorState extends State<MapEditor> {
           ),
         ],
       ),
-      bottomNavigationBar: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          ElevatedButton(
-            onPressed: _importObject,
-            child: const Text("Import Object"),
-          ),
-          ElevatedButton(
-            onPressed: _showUnityUI,
-            child: const Text("Add Navigation Point"),
-          ),
-          ElevatedButton(
-            onPressed: _hideObject,
-            child: const Text("Hide Object"),
-          ),
-          ElevatedButton(
-            onPressed: _deleteObject,
-            child: const Text("Delete Object"),
-          ),
-          ElevatedButton(
-            onPressed: _exportScene,
-            child: const Text("Export Scene"),
-          ),
-          ElevatedButton(
-            onPressed: _importScene,
-            child: const Text("Import Scene"),
-          ),
-          ElevatedButton(
-            onPressed: _generateQr,
-            child: const Text("Generate QR"),
-          ),
-        ],
+      bottomNavigationBar: Container(
+        color: Colors.black, // Background color
+        padding: const EdgeInsets.symmetric(vertical: 10), // Adds some spacing
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            double totalWidth =
+                buttonList.length * 140.0; // Approx width per button
+            bool isScrollable = totalWidth > constraints.maxWidth;
+
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: constraints
+                      .maxWidth, // Ensures centering when not scrolling
+                ),
+                child: Row(
+                  mainAxisAlignment: isScrollable
+                      ? MainAxisAlignment.start
+                      : MainAxisAlignment.center, // Center if fits, else start
+                  children: buttonList.map((button) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 5), // Button spacing
+                      child: RoundedButton(
+                        text: button['text'],
+                        onPressed: button['onPressed'],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
   void initUnity(bool isAdmin) {
     _unityController.postMessage(
-        "CanvasManager",
-        "SetMode",
-        isAdmin.toString()
-    );
+        "CanvasManager", "SetMode", isAdmin.toString());
   }
 
   void onUnityCreated(UnityWidgetController controller) {
     _unityController = controller;
     _isUnityReady = true;
-    Future.delayed(Duration(seconds: 1), () {
-        initUnity(false);
-        if (widget.isEditMode && _mapsUrl != null) {
-            _loadInitialSceneFromUrl(_mapsUrl!);
-        }
+    Future.delayed(const Duration(seconds: 1), () {
+      initUnity(false);
+      if (widget.isEditMode && _mapsUrl != null) {
+        _loadInitialSceneFromUrl(_mapsUrl!);
+      }
     });
   }
 
@@ -233,11 +249,10 @@ class MapEditorState extends State<MapEditor> {
 
       if (fileBytes != null) {
         String base64String = base64Encode(fileBytes);
-        print('File picked: ${result.files.first.name}');
         _unityController.postMessage(
             'SceneController', 'LoadModelFromBase64', base64String);
       } else {
-        print('Failed to retrieve file bytes.');
+        showToast('File picking was canceled.');
       }
     } else {
       showToast('File picking was canceled.');
@@ -300,7 +315,7 @@ class MapEditorState extends State<MapEditor> {
         _unityController.postMessage(
             'SceneController', 'ImportSceneFromBase64', base64String);
       } else {
-        print("Failed to retrieve file bytes.");
+        showToast("Failed to select file");
       }
     } else {
       showToast("No file selected.");
@@ -319,7 +334,7 @@ class MapEditorState extends State<MapEditor> {
           return doc.data()?['url'] as String?;
         }
       } catch (e) {
-        print('Error fetching map details: $e');
+        showToast('Error fetching map details');
       }
     }
     return null;

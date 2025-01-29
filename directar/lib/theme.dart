@@ -49,6 +49,11 @@ class AppTextStyles {
     fontSize: 16.0,
     color: Colors.white,
   );
+
+  static const TextStyle hintText = TextStyle(
+    fontSize: 16.0,
+    color: Colors.grey,
+  );
 }
 
 class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
@@ -157,7 +162,6 @@ class AppTheme {
           borderColor: AppColors.secondaryColor,
           boxDecorationColor: AppColors.transparentCardLight),
     ],
-    dropdownMenuTheme: const DropdownMenuThemeData(),
     dialogBackgroundColor: AppColors.backgroundLight,
     iconTheme: const IconThemeData(color: Colors.black87),
     primaryColor: AppColors.backgroundLight,
@@ -166,8 +170,10 @@ class AppTheme {
     textTheme: TextTheme(
       displayLarge: AppTextStyles.headline.copyWith(color: Colors.black87),
       bodyLarge: AppTextStyles.bodyText.copyWith(color: Colors.black87),
-      bodyMedium: AppTextStyles.bodyText.copyWith(color: Colors.black87, fontSize: 20),
-      bodySmall: AppTextStyles.bodyText.copyWith(color: Colors.black87, fontSize: 10),
+      bodyMedium:
+          AppTextStyles.bodyText.copyWith(color: Colors.black87, fontSize: 20),
+      bodySmall:
+          AppTextStyles.bodyText.copyWith(color: Colors.black87, fontSize: 10),
       headlineLarge:
           AppTextStyles.bodyText.copyWith(color: Colors.black87, fontSize: 25),
       displayMedium: AppTextStyles.appBarTitle
@@ -181,6 +187,15 @@ class AppTheme {
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
     ),
+    inputDecorationTheme: const InputDecorationTheme(
+        focusColor: AppColors.primaryColor,
+        hoverColor: AppColors.primaryColor,
+        fillColor: Color(0xFF121212),
+        border: OutlineInputBorder(),
+        hintStyle: AppTextStyles.hintText,
+        iconColor: AppColors.primaryColor),
+    dropdownMenuTheme: DropdownMenuThemeData(
+        textStyle: AppTextStyles.bodyText.copyWith(color: Colors.black87)),
   );
 
   static final ThemeData darkTheme = ThemeData(
@@ -206,8 +221,10 @@ class AppTheme {
     textTheme: TextTheme(
       displayLarge: AppTextStyles.headline.copyWith(color: Colors.white),
       bodyLarge: AppTextStyles.bodyText.copyWith(color: Colors.white),
-      bodyMedium: AppTextStyles.bodyText.copyWith(color: Colors.white, fontSize: 20),
-      bodySmall: AppTextStyles.bodyText.copyWith(color: Colors.white, fontSize: 10),
+      bodyMedium:
+          AppTextStyles.bodyText.copyWith(color: Colors.white, fontSize: 20),
+      bodySmall:
+          AppTextStyles.bodyText.copyWith(color: Colors.white, fontSize: 10),
       headlineLarge:
           AppTextStyles.bodyText.copyWith(color: Colors.white, fontSize: 25),
       displayMedium: AppTextStyles.appBarTitle
@@ -222,6 +239,16 @@ class AppTheme {
       backgroundColor: Colors.transparent,
       elevation: 0,
     ),
+    dropdownMenuTheme: DropdownMenuThemeData(
+      textStyle: AppTextStyles.bodyText.copyWith(color: Colors.white),
+    ),
+    inputDecorationTheme: const InputDecorationTheme(
+        focusColor: AppColors.primaryColor,
+        fillColor: AppColors.backgroundDark,
+        prefixIconColor: AppColors.primaryColor,
+        border: OutlineInputBorder(),
+        hintStyle: AppTextStyles.hintText,
+        iconColor: AppColors.primaryColor),
   );
 
   static BoxDecoration getBackgroundDecoration(ThemeMode themeMode) {

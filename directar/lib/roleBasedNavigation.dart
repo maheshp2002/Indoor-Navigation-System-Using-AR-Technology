@@ -1,5 +1,7 @@
+import 'package:directar/components/roundedButton.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'adminPage.dart';
 import 'home.dart';
 import 'services/firebaseService.dart';
@@ -25,7 +27,8 @@ class _RoleBasedNavigationState extends State<RoleBasedNavigation> {
         'email': widget.user.email,
         'name': _nameController.text,
         'role': selectedRole,
-        'organization': selectedRole == 'Admin' ? _organizationController.text : null,
+        'organization':
+            selectedRole == 'Admin' ? _organizationController.text : null,
       };
 
       await _firebaseService.saveUserDetails(widget.user.email!, userData);
@@ -76,7 +79,7 @@ class _RoleBasedNavigationState extends State<RoleBasedNavigation> {
                       value: selectedRole,
                       decoration: const InputDecoration(
                         hintText: "Select Role",
-                        prefixIcon: Icon(Icons.person),
+                        prefixIcon: Icon(FontAwesomeIcons.user),
                         border: OutlineInputBorder(),
                       ),
                       items: const [
@@ -106,7 +109,7 @@ class _RoleBasedNavigationState extends State<RoleBasedNavigation> {
                       controller: _nameController,
                       decoration: const InputDecoration(
                         hintText: "Name",
-                        prefixIcon: Icon(Icons.account_circle),
+                        prefixIcon: Icon(FontAwesomeIcons.signature),
                         border: OutlineInputBorder(),
                       ),
                       validator: (value) {
@@ -122,7 +125,7 @@ class _RoleBasedNavigationState extends State<RoleBasedNavigation> {
                         controller: _organizationController,
                         decoration: const InputDecoration(
                           hintText: "Organization Name",
-                          prefixIcon: Icon(Icons.business),
+                          prefixIcon: Icon(FontAwesomeIcons.building),
                           border: OutlineInputBorder(),
                         ),
                         validator: (value) {
@@ -133,13 +136,13 @@ class _RoleBasedNavigationState extends State<RoleBasedNavigation> {
                         },
                       ),
                     const SizedBox(height: 20),
-                    ElevatedButton(
+                    RoundedButton(
+                      text: "Submit",
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
                           submitRole();
                         }
                       },
-                      child: const Text('Submit'),
                     ),
                   ],
                 ),
