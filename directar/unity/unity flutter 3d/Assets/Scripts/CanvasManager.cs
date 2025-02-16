@@ -1,10 +1,12 @@
 using UnityEngine;
-
+using FlutterUnityIntegration;
 public class CanvasManager : MonoBehaviour
 {
     public GameObject adminUI; // Canvas for Admin
     public GameObject xrOrigin;  // XR Origin for User (previously userUI)
-
+    public GameObject arsession;
+    public GameObject xrInteractionManager;
+    [SerializeField] private UnityMessageSender unityMessageSender;
     public void SetMode(bool isAdmin)
     {
         // Toggle admin UI

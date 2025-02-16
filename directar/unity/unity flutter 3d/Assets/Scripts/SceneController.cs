@@ -566,6 +566,12 @@ public class SceneController : MonoBehaviour
                 {
                     // Handle Navigation Points
                     NavigationPoint navPoint = obj.GetComponent<NavigationPoint>();
+                    
+                    if (navPoint == null)
+                    {
+                        Debug.LogError("NavigationPoint component is missing on the prefab!");
+                    }
+
                     SceneObjectData navData = new SceneObjectData
                     {
                         position = obj.transform.position,
@@ -573,8 +579,8 @@ public class SceneController : MonoBehaviour
                         scale = obj.transform.localScale,
                         type = "NavigationLine",
                         label = obj.GetComponentInChildren<TextMeshPro>()?.text ?? "",
-                        isSource = obj.GetComponent<NavigationPoint>()?.IsSource ?? false,
-                        isDestination = obj.GetComponent<NavigationPoint>()?.IsDestination ?? false,
+                        isSource = navPoint.IsSource,
+                        isDestination = navPoint.IsDestination,
                         name = obj.name
                     };
                     sceneData.objects.Add(navData);
@@ -761,6 +767,8 @@ public class SceneController : MonoBehaviour
                     textMesh.text = objData.label;
                     navPoint.tag = objData.type;
                     navPoint.name = objData.name;
+
+                    spawnedObjects.Add(navPoint);
                 }
                 else
                 {

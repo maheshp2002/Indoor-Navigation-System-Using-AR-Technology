@@ -8,9 +8,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_unity_widget/flutter_unity_widget.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:provider/provider.dart';
 import 'package:ulid/ulid.dart';
-import '../components/commonAppBar.dart';
 import '../components/roundedButton.dart';
+import '../components/themeManager.dart';
 import '../services/firebaseService.dart';
 import 'package:http/http.dart' as http;
 
@@ -100,6 +101,8 @@ class MapEditorState extends State<MapEditor> {
   @override
   Widget build(BuildContext context) {
     final appThemeExtension = Theme.of(context).extension<AppThemeExtension>();
+    final theme = Theme.of(context);
+    final themeManager = Provider.of<ThemeManager>(context);
     final List<Map<String, dynamic>> buttonList = [
       {'text': "Import Object", 'onPressed': _importObject},
       {'text': "Add Navigation Point", 'onPressed': _showUnityUI},
@@ -110,8 +113,24 @@ class MapEditorState extends State<MapEditor> {
     ];
 
     return Scaffold(
-      appBar: const CommonAppBar(
-        title: 'Maps 3D Editor',
+      appBar: AppBar(
+        title: Center(
+          child: Text("Map 3D Editor", style: theme.textTheme.displayMedium),
+        ),
+        iconTheme: theme.iconTheme,
+        actions: [
+          IconButton(
+            icon: Icon(
+              color: theme.iconTheme.color,
+              themeManager.themeMode == ThemeMode.dark
+                  ? Icons.dark_mode
+                  : Icons.light_mode,
+            ),
+            onPressed: () {
+              themeManager.toggleTheme();
+            },
+          ),
+        ],
       ),
       body: Row(
         children: [

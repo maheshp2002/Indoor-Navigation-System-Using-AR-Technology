@@ -523,6 +523,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   adminUI: {fileID: 902047204}
   xrOrigin: {fileID: 960583988}
+  arsession: {fileID: 0}
+  xrInteractionManager: {fileID: 0}
+  unityMessageSender: {fileID: 1763169352}
 --- !u!4 &270067937
 Transform:
   m_ObjectHideFlags: 0
@@ -2012,7 +2015,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &960583989
 MonoBehaviour:
   m_ObjectHideFlags: 0
