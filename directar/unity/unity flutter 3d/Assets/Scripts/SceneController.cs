@@ -18,6 +18,7 @@ public class SceneController : MonoBehaviour
 {
     [SerializeField] private Material defaultMaterial;
     public GameObject navigationPointPrefab;
+    public GameObject sourcePrefab;
     private List<GameObject> spawnedObjects = new List<GameObject>();
     private Camera mainCamera;
     private GameObject selectedObject;
@@ -37,11 +38,11 @@ public class SceneController : MonoBehaviour
     {
         mainCamera = Camera.main;
         SetupMiniCamera();
+        UpdateMiniCameraView();
     }
 
     void Update()
     {
-        UpdateMiniCameraView();
         // Check if inputs are locked or UI is active
         if (isInputLocked || EventSystem.current.currentSelectedGameObject != null)
         {
@@ -86,9 +87,16 @@ public class SceneController : MonoBehaviour
     {
         try
         {
+            GameObject newPoint;
             // Instantiate the navigation point prefab at the current camera position
             Vector3 spawnPosition = mainCamera.transform.position + mainCamera.transform.forward * 2;
-            GameObject newPoint = Instantiate(navigationPointPrefab, spawnPosition, Quaternion.identity);
+
+            if(isDestination){
+                newPoint = Instantiate(navigationPointPrefab, spawnPosition, Quaternion.identity);
+            } else {
+                newPoint = Instantiate(sourcePrefab, spawnPosition, Quaternion.identity);
+            }
+
             newPoint.tag = "NavigationLine";
 
             // Set metadata using the NavigationPoint script
@@ -313,13 +321,15 @@ public class SceneController : MonoBehaviour
             }
 
             // Move object along X, Y, and Z axes
-            if (Input.GetKey(KeyCode.M)) // Use M key to move up along Y-axis
+            float adjustedSpeed = moveSpeed * Time.deltaTime;
+
+            if (Input.GetKey(KeyCode.M)) // Move up along Y-axis
             {
-                selectedObject.transform.Translate(Vector3.up * moveSpeed, Space.World);
+                selectedObject.transform.Translate(Vector3.up * adjustedSpeed, Space.World);
             }
-            else if (Input.GetKey(KeyCode.N)) // Use N key to move down along Y-axis
+            else if (Input.GetKey(KeyCode.N)) // Move down along Y-axis
             {
-                selectedObject.transform.Translate(Vector3.down * moveSpeed, Space.World);
+                selectedObject.transform.Translate(Vector3.down * adjustedSpeed, Space.World);
             }
 
             transformationOccurred = true;
@@ -560,6 +570,16 @@ public class SceneController : MonoBehaviour
         {
             // Prepare the scene data
             SceneData sceneData = new SceneData();
+
+            // Add camera data
+            sceneData.cameraData = new CameraData
+            {
+                position = miniCamera.transform.position,
+                rotation = miniCamera.transform.rotation,
+                fieldOfView = miniCamera.fieldOfView
+            };
+
+
             foreach (GameObject obj in spawnedObjects)
             {
                 if (obj.CompareTag("NavigationLine"))
@@ -730,6 +750,7 @@ public class SceneController : MonoBehaviour
 
     public void ImportScene(string zipFilePath)
     {
+        mainCamera = Camera.main;
         try
         {
             // Generate a unique folder name
@@ -755,18 +776,38 @@ public class SceneController : MonoBehaviour
                 return;
             }
 
+            // Apply camera data
+            if (sceneData.cameraData != null)
+            {
+                mainCamera.transform.position = sceneData.cameraData.position;
+                mainCamera.transform.rotation = sceneData.cameraData.rotation;
+                mainCamera.fieldOfView = sceneData.cameraData.fieldOfView;
+            }
+
             // Load objects from metadata
             foreach (var objData in sceneData.objects)
             {
-               Debug.Log($"objData.type {objData.type}");
                 if (objData.type == "NavigationLine")
                 {
-                    GameObject navPoint = Instantiate(navigationPointPrefab, objData.position, objData.rotation);
+                    GameObject navPoint;
+                    
+                    if (objData.isSource) {
+                       navPoint = Instantiate(sourcePrefab, objData.position, objData.rotation);
+                    } else {
+                        navPoint = Instantiate(navigationPointPrefab, objData.position, objData.rotation);
+                    }
+                    
                     navPoint.transform.localScale = objData.scale;
                     var textMesh = navPoint.GetComponentInChildren<TextMeshPro>();
                     textMesh.text = objData.label;
                     navPoint.tag = objData.type;
                     navPoint.name = objData.name;
+                    NavigationPoint navComponent = navPoint.GetComponent<NavigationPoint>();
+                    
+                    if (navComponent != null)
+                    {
+                        navComponent.SetData(objData.label, objData.isSource, objData.isDestination);
+                    }
 
                     spawnedObjects.Add(navPoint);
                 }
@@ -872,6 +913,15 @@ public class SceneController : MonoBehaviour
     public class SceneData
     {
         public List<SceneObjectData> objects = new List<SceneObjectData>();
+        public CameraData cameraData;
+    }
+
+    [System.Serializable]
+    public class CameraData
+    {
+        public Vector3 position;
+        public Quaternion rotation;
+        public float fieldOfView;
     }
 
     [System.Serializable]

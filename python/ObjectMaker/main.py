@@ -9,7 +9,7 @@ app = FastAPI()
 UPLOAD_FOLDER = 'uploads'
 MESHROOM_BIN_PATH = 'E:\\Meshroom-2023.3.0\\aliceVision'
 MESHROOM_EXE = 'E:\\Meshroom-2023.3.0\\meshroom_batch.exe'
-DRAFT_PIPELINE = 'E:\\Meshroom-2023.3.0\\lib\meshroom\\pipelines\\photogrammetryDraft.mg'
+DRAFT_PIPELINE = 'E:\\Meshroom-2023.3.0\\lib\\meshroom\\pipelines\\photogrammetryDraft.mg'
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
