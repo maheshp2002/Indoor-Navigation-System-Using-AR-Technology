@@ -45,51 +45,27 @@ public class NavigationController : MonoBehaviour
     [SerializeField] private UnityMessageSender unityMessageSender;
     public GameObject xrOrigin; // XR Origin GameObject
     public GameObject navigationPointPrefab; // Prefab for navigation points destination
+    public GameObject sourcePrefab; // Prefab for source
     public LineRenderer pathLine; // LineRenderer for navigation
     private OBJLoader objLoader = new OBJLoader();
     private Dictionary<string, Transform> destinationPoints = new Dictionary<string, Transform>();
-    private UnityEngine.AI.NavMeshAgent navMeshAgent;
     private string defaultDestination;
-    public Camera ARCamera;
-    public GameObject navigationController; 
 
     void Start()
     {
         #if UNITY_ANDROID
             Camera.main.clearFlags = CameraClearFlags.Depth; // No background, keeps AR view
-            Camera.main.cullingMask = LayerMask.GetMask("AR Content", "UI"); // Show only AR layers
-    
-            // Ensure the XR Origin has a NavMeshAgent
-            navMeshAgent = xrOrigin.GetComponent<UnityEngine.AI.NavMeshAgent>();
-            if (navMeshAgent == null)
-            {
-                navMeshAgent = xrOrigin.AddComponent<UnityEngine.AI.NavMeshAgent>();
-            }
-
-            navMeshAgent.stoppingDistance = 0f;
-            navMeshAgent.autoTraverseOffMeshLink = true;
-            navMeshAgent.updatePosition = true;
-            navMeshAgent.updateRotation = false;
-            navMeshAgent.radius = 0.14f; 
-            navMeshAgent.angularSpeed = 120;
-            navMeshAgent.speed = 0;
-
+            Camera.main.cullingMask = LayerMask.GetMask("AR Content", "UI", "Walkable"); // Show only AR layers
             Input.multiTouchEnabled = false;
         #endif
     }
 
     void Update()
     {
-        if (navMeshAgent != null && xrOrigin != null)
+        if (xrOrigin != null && !string.IsNullOrEmpty(defaultDestination) &&
+            destinationPoints.TryGetValue(defaultDestination, out Transform target))
         {
-            // Ensure NavMeshAgent follows XR Origin
-            navMeshAgent.transform.position = xrOrigin.transform.position;
-
-            // Update path dynamically if user moves
-            if (!string.IsNullOrEmpty(defaultDestination) && destinationPoints.TryGetValue(defaultDestination, out Transform target))
-            {
-                ShowNavigationPath(target.position);
-            }
+            ShowNavigationPath(target.position);
         }
     }
 
@@ -112,7 +88,6 @@ public class NavigationController : MonoBehaviour
     public void ImportScene(string zipFilePath)
     {
         string tempFolder = Path.Combine(Application.persistentDataPath, Guid.NewGuid().ToString());
-        ARCamera = Camera.main;
 
         try
         {
@@ -124,139 +99,35 @@ public class NavigationController : MonoBehaviour
 
             // Check for sceneData.json
             string jsonPath = Path.Combine(tempFolder, "sceneData.json");
-
-            if (!File.Exists(jsonPath))
-            {
-                Debug.LogError("sceneData.json not found.");
-                return;
-            }
-
             string json = File.ReadAllText(jsonPath);
             SceneData sceneData = JsonUtility.FromJson<SceneData>(json);
 
-            if (sceneData.objects == null || sceneData.objects.Count == 0)
-            {
-                Debug.LogError("No objects found in the scene metadata.");
-                return;
-            }
-
-            // Apply camera data
-            if (sceneData.cameraData != null)
-            {
-                ARCamera.transform.position = sceneData.cameraData.position;
-                ARCamera.transform.rotation = sceneData.cameraData.rotation;
-                ARCamera.fieldOfView = 60f;
-            }
-
-            // Create a parent GameObject for the imported environment
-            GameObject importedEnvironment = new GameObject("ImportedEnvironment");
-
             foreach (var objData in sceneData.objects)
             {
+                Debug.LogError($"navigation point for {objData} {objData.name}");
                 if (objData.type == "NavigationLine" && objData.isSource == true)
                 {
-                    GameObject navPoint = Instantiate(navigationPointPrefab, objData.position, objData.rotation);
-                    navPoint.transform.localScale = objData.scale;
-                    var textMesh = navPoint.GetComponentInChildren<TextMeshPro>();
-                    textMesh.text = objData.label;
-                    navPoint.tag = objData.type;
-                    navPoint.name = objData.name;
-                    navPoint.isStatic = true;
-
-                    // Move NavigationController to source position
-                    if (navigationController != null)
-                    {
-                        navigationController.transform.position = objData.position;
-                        navigationController.transform.rotation = objData.rotation;
-                    }
-
+                    SetupNavigationPoint(objData);
                     xrOrigin.transform.position = objData.position;
+                    xrOrigin.transform.rotation = objData.rotation;
                     xrOrigin.SetActive(true);
-                }
-                else if (objData.type == "NavigationLine" && objData.isDestination == true)
+                    Debug.Log($"XR Origin placed at start: {xrOrigin.transform.position}");
+                } else if (objData.type == "NavigationLine" && objData.isDestination == true)
                 {
-                    GameObject navPoint = Instantiate(navigationPointPrefab, objData.position, objData.rotation);
-                    navPoint.transform.localScale = objData.scale;
-                    var textMesh = navPoint.GetComponentInChildren<TextMeshPro>();
-                    textMesh.text = objData.label;
-                    navPoint.tag = objData.type;
-                    navPoint.name = objData.name;
-                    navPoint.isStatic = true;
-
-                    // Store the destination for navigation
+                    Debug.Log($"swat placed at start: {objData.position}");
+                    GameObject navPoint = SetupNavigationPoint(objData);
+                    Debug.Log($"swat placed after: {objData.position}");
                     destinationPoints.Add(objData.label, navPoint.transform);
                 }
                 else
                 {
-                    // Import 3D objects from the zip folder
-                    string modelPath = Path.Combine(tempFolder, $"{objData.name}.obj");
-
-                    if (File.Exists(modelPath))
-                    {
-                        GameObject importedModel = objLoader.Load(modelPath);
-
-                        if (importedModel != null)
-                        {
-                            // Find the object with MeshRenderer or MeshFilter
-                            GameObject meshObject = FindMeshObject(importedModel);
-
-                            if (meshObject != null)
-                            {                                
-                                importedModel.transform.position = objData.position;
-                                importedModel.transform.rotation = objData.rotation;
-                                importedModel.transform.localScale = objData.scale;
-                                importedModel.tag = objData.type;
-                                importedModel.name = objData.name;
-                                importedModel.layer = LayerMask.NameToLayer("Walkable");
-                                importedModel.isStatic = true;
-                                AddCollidersRecursively(meshObject);
-                                AddNavMeshSurface(importedModel);
-
-                                // Assign shader to walkable surfaces
-                                Shader walkableShader = Shader.Find("Custom/NavMeshVisualizer");
-
-                                if (walkableShader != null)
-                                {
-                                    Renderer objRenderer = meshObject.GetComponent<Renderer>();
-                                    if (objRenderer != null)
-                                    {
-                                        objRenderer.material = new Material(walkableShader);
-                                    }
-                                }
-                                else
-                                {
-                                    Debug.LogError("Walkable area shader not found!");
-                                }
-
-                                // Ensure the object has a collider
-                            }
-                            else
-                            {
-                                Debug.LogError("Mesh object not found in the imported model.");
-                            }
-                        }
-                        else
-                        {
-                            Debug.LogError("Failed to load 3D model.");
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogError($"3D model file not found: {modelPath}");
-                    }
+                    Import3DModel(tempFolder, objData);
                 }
             }
 
-            SendDestinationLabelsToFlutter();
-
-            // Add NavMeshSurface to the root of the imported objects
-            NavMeshSurface navMeshSurface = importedEnvironment.AddComponent<NavMeshSurface>();
-            navMeshSurface.collectObjects = CollectObjects.Children;
-            navMeshSurface.collectObjects = CollectObjects.All;
-            navMeshSurface.layerMask = LayerMask.GetMask("Walkable");
-
+            SendDestinationLabelsToFlutter();   
             // Bake after a short delay to ensure all objects are included
-            Invoke(nameof(BakeNavMesh), 1.0f);
+            Invoke(nameof(BakeNavMesh), 2.0f);
         }
         catch (Exception ex)
         {
@@ -264,31 +135,60 @@ public class NavigationController : MonoBehaviour
         }
         finally
         {
-            SetDefaultNavigationPath();
             Directory.Delete(tempFolder, true);
         }
     }
 
-    void AddNavMeshSurface(GameObject importedObject)
+    private GameObject SetupNavigationPoint(SceneObjectData objData)
     {
-        // Find the root parent to attach the NavMeshSurface
-        GameObject rootParent = importedObject.transform.root.gameObject;
-
-        // Check if a NavMeshSurface component is already attached
-        NavMeshSurface surface = rootParent.GetComponent<NavMeshSurface>();
-        if (surface == null)
+        GameObject navPoint;
+        if (objData.isSource) 
         {
-            surface = rootParent.AddComponent<NavMeshSurface>();
+            navPoint = Instantiate(navigationPointPrefab, objData.position, objData.rotation);
+        } else {
+            navPoint = Instantiate(sourcePrefab, objData.position, objData.rotation);
         }
+        navPoint.transform.SetParent(null, true);
+        navPoint.transform.localScale = objData.scale;
+        navPoint.tag = objData.type;
+        navPoint.name = objData.name;
+        navPoint.isStatic = true;
+        navPoint.GetComponentInChildren<TextMeshPro>().text = objData.label;
 
-        // Configure the NavMeshSurface properties
-        surface.collectObjects = CollectObjects.Children; // Include all children
-        surface.useGeometry = NavMeshCollectGeometry.RenderMeshes;
-        surface.layerMask = LayerMask.GetMask("Walkable");
+        return navPoint;
+    }
+
+    private void Import3DModel(string folderPath, SceneObjectData objData)
+    {
+        string modelPath = Path.Combine(folderPath, $"{objData.name}.obj");
+        if (!File.Exists(modelPath)) return;
+
+        GameObject importedModel = objLoader.Load(modelPath);
+        importedModel.transform.SetParent(null, true);
+        if (importedModel == null) return;
+
+        GameObject meshObject = FindMeshObject(importedModel);
+
+        if (meshObject == null) return;
+
+        importedModel.transform.SetPositionAndRotation(objData.position, objData.rotation);
+        importedModel.transform.localScale = objData.scale;
+        importedModel.tag = objData.type;
+        importedModel.name = objData.name;
+        importedModel.isStatic = true;
         
-        // Rebuild NavMesh after adding object
-        surface.BuildNavMesh();
-
+        meshObject.layer = LayerMask.NameToLayer("Walkable");
+        AddCollidersRecursively(meshObject);
+        Debug.Log($"3D Model Imported - Name: {objData.name}, Position: {importedModel.transform.position}, Scale: {importedModel.transform.localScale}, Rotation: {importedModel.transform.rotation}");
+        Renderer objRenderer = meshObject.GetComponent<Renderer>();
+        if (objRenderer != null)
+        {
+            objRenderer.material = new Material(Shader.Find("Standard")); // Or any default shader
+        }
+        NavMeshSurface navMeshSurface = meshObject.AddComponent<NavMeshSurface>();
+        navMeshSurface.collectObjects = CollectObjects.All;
+        navMeshSurface.layerMask = LayerMask.GetMask("Walkable");    
+        Debug.Log($"{meshObject.name} assigned to layer: {meshObject.layer}");
     }
 
     // Bake NavMesh for all imported objects
@@ -304,25 +204,36 @@ public class NavigationController : MonoBehaviour
 
         foreach (var surface in surfaces)
         {
+            // Set parameters from the image
+            surface.agentTypeID = 0; // Use the default Humanoid agent type
+
+            // Step Height & Slope from the image
+            surface.defaultArea = 0; // Default walkable area
+            NavMeshBuildSettings settings = NavMesh.GetSettingsByID(surface.agentTypeID);
+            settings.agentRadius = 0.1f;
+            settings.agentHeight = 1.52f;
+            settings.agentSlope = 45f;
+            settings.agentClimb = 0.5f; // Step height from the image
+
             surface.BuildNavMesh();
         }
 
         Debug.Log("NavMesh successfully baked!");
 
-        // Ensure NavMeshAgent is enabled after NavMesh is built
-        if (navMeshAgent != null)
+        if (destinationPoints.TryGetValue(destinationPoints.Keys.First(), out Transform target))
         {
-            navMeshAgent.enabled = true;
+            ShowNavigationPath(target.position);
         }
 
+        LogNavMeshData();
         VisualizeNavMesh();
+        Debug.Log("VisualizeNavMesh added successfully!");
     }
-
 
     void VisualizeNavMesh()
     {
         Mesh navMesh = new Mesh();
-        UnityEngine.AI.NavMeshTriangulation triangulatedNavMesh = UnityEngine.AI.NavMesh.CalculateTriangulation();
+        NavMeshTriangulation triangulatedNavMesh = NavMesh.CalculateTriangulation();
 
         navMesh.vertices = triangulatedNavMesh.vertices;
         navMesh.triangles = triangulatedNavMesh.indices;
@@ -333,14 +244,11 @@ public class NavigationController : MonoBehaviour
 
         meshFilter.mesh = navMesh;
 
-        // Create a material using the custom shader
-        Material navMeshMaterial = new Material(Shader.Find("Custom/NavMeshDebug"));
+        // Assign shader only to NavMesh visualization, not the imported object
+        Material navMeshMaterial = new Material(Shader.Find("Custom/NavMeshVisualizer"));
         meshRenderer.material = navMeshMaterial;
-
-        Debug.Log($"macs NavMeshSurface added successfully {meshRenderer}");
-        DrawNavMeshEdges();
-
     }
+
 
     void DrawNavMeshEdges()
     {
@@ -357,8 +265,6 @@ public class NavigationController : MonoBehaviour
             DrawLine(navMeshEdges, v2, v3);
             DrawLine(navMeshEdges, v3, v1);
         }
-        PlaceAgentOnNavMesh(navMeshAgent); 
-        SendNavMeshDataToFlutter();
     }
 
     void DrawLine(GameObject parent, Vector3 start, Vector3 end)
@@ -373,48 +279,29 @@ public class NavigationController : MonoBehaviour
         lr.startColor = Color.green;
         lr.endColor = Color.green;
         line.transform.SetParent(parent.transform);
-
-        Debug.Log($"macdevils NavMeshSurface added successfully {line}");
     }
 
-    void SendNavMeshDataToFlutter()
+    void LogNavMeshData()
     {
-        var triangulation = UnityEngine.AI.NavMesh.CalculateTriangulation();
-        List<Vector3> vertices = new List<Vector3>(triangulation.vertices);
-        List<int> indices = new List<int>(triangulation.indices);
+        var triangulation = NavMesh.CalculateTriangulation();
 
-        var navMeshData = new
+        Debug.Log($"NavMesh Triangulation: {triangulation.vertices.Length} vertices, {triangulation.indices.Length / 3} triangles");
+
+        for (int i = 0; i < triangulation.vertices.Length; i++)
         {
-            vertices = vertices.Select(v => new { v.x, v.y, v.z }),
-            indices
-        };
-
-        string json = JsonConvert.SerializeObject(navMeshData);
-        Debug.Log($"macdevils {json}");
-        unityMessageSender.SendMessageToFlutter(json);
-    }
-
-    void PlaceAgentOnNavMesh(UnityEngine.AI.NavMeshAgent agent)
-    {
-        UnityEngine.AI.NavMeshHit hit;
-
-        if (UnityEngine.AI.NavMesh.SamplePosition(agent.transform.position, out hit, 5.0f, UnityEngine.AI.NavMesh.AllAreas))
-        {
-            agent.Warp(hit.position);
-            Debug.Log($"macsNavMeshAgent placed successfully at {hit.position}");
+            Debug.Log($"Vertex {i}: {triangulation.vertices[i]}");
         }
-        else
+
+        for (int i = 0; i < triangulation.indices.Length; i += 3)
         {
-            Debug.LogError("No valid NavMesh position found for the agent! Trying alternative methods...");
-            Debug.Log($"Agent's current position: {agent.transform.position}");
-            
-            NavMeshTriangulation triangulation = UnityEngine.AI.NavMesh.CalculateTriangulation();
-            if (triangulation.vertices.Length == 0)
-            {
-                Debug.LogError("NavMesh appears to be empty. Make sure NavMesh was built properly.");
-            }
+            Vector3 v1 = triangulation.vertices[triangulation.indices[i]];
+            Vector3 v2 = triangulation.vertices[triangulation.indices[i + 1]];
+            Vector3 v3 = triangulation.vertices[triangulation.indices[i + 2]];
+
+            Debug.Log($"Triangle {i / 3}: {v1}, {v2}, {v3}");
         }
     }
+
 
     private GameObject FindMeshObject(GameObject obj)
     {
@@ -430,6 +317,7 @@ public class NavigationController : MonoBehaviour
             GameObject found = FindMeshObject(child.gameObject);
             if (found != null)
             {
+                Debug.Log($"macs {found}");
                 return found;
             }
         }
@@ -474,26 +362,52 @@ public class NavigationController : MonoBehaviour
             SetDestination(defaultDestination);
         }
     }
-
+    
     private void ShowNavigationPath(Vector3 targetPosition)
     {
-        UnityEngine.AI.NavMeshPath path = new UnityEngine.AI.NavMeshPath();
+        if (xrOrigin == null) return;
 
-        if (!navMeshAgent.isOnNavMesh)
+        NavMeshPath path = new NavMeshPath();
+        Vector3 startPosition = xrOrigin.transform.position; // Use XR Origin position as the player position
+
+        Debug.Log($"XR Origin Position: {startPosition}");
+        Debug.Log($"Original Target Position: {targetPosition}");
+
+        // Ensure target position is on the NavMesh
+        if (!NavMesh.SamplePosition(targetPosition, out NavMeshHit hit, 5.0f, NavMesh.AllAreas))
         {
-            Debug.LogError("NavMeshAgent is not on a valid NavMesh!");
+            Debug.LogError($"Target position {targetPosition} is NOT on the NavMesh. Finding nearest valid point...");
+            return;
+        }
+        
+        targetPosition = hit.position;  // Adjusted valid NavMesh position
+
+        Debug.Log($"Adjusted Target Position (On NavMesh): {targetPosition}");
+
+        // Ensure player (xrOrigin) position is also on the NavMesh
+        if (!NavMesh.SamplePosition(startPosition, out NavMeshHit startHit, 5.0f, NavMesh.AllAreas))
+        {
+            Debug.LogError($"XR Origin position {startPosition} is NOT on the NavMesh.");
             return;
         }
 
-        if (navMeshAgent.CalculatePath(targetPosition, path))
+        startPosition = startHit.position; // Adjusted valid start position
+
+        Debug.Log($"Adjusted Start Position (On NavMesh): {startPosition}");
+
+        // Calculate path
+        if (NavMesh.CalculatePath(startPosition, targetPosition, NavMesh.AllAreas, path) && path.status == NavMeshPathStatus.PathComplete)
         {
             pathLine.positionCount = path.corners.Length;
             pathLine.SetPositions(path.corners);
-            Debug.Log("navmesh added");
-        }
+            pathLine.startColor = Color.red;
+            pathLine.endColor = Color.blue;
+            Debug.Log("Navigation path updated.");
+        } 
         else
         {
-            Debug.LogError("Failed to calculate path.");
+            Debug.LogError($"Path calculation failed: No valid path. {startPosition} → {targetPosition}");
+            pathLine.positionCount = 0;
         }
     }
 
@@ -501,7 +415,7 @@ public class NavigationController : MonoBehaviour
     {
         // Extract all destination labels
         List<string> destinationLabels = new List<string>(destinationPoints.Keys);
-
+    
         // Convert to proper JSON format
         string jsonLabels = JsonConvert.SerializeObject(new { destinations = destinationLabels });
 

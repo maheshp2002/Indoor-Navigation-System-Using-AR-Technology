@@ -37,8 +37,6 @@ public class SceneController : MonoBehaviour
     void Start()
     {
         mainCamera = Camera.main;
-        SetupMiniCamera();
-        UpdateMiniCameraView();
     }
 
     void Update()
@@ -64,16 +62,6 @@ public class SceneController : MonoBehaviour
         else
         {
             Debug.LogError("Mini camera is not assigned!");
-        }
-    }
-
-    private void UpdateMiniCameraView()
-    {
-        if (miniCamera != null && mainCamera != null)
-        {
-            // Optional: Match the mini camera's position and rotation with the main camera
-            miniCamera.transform.position = mainCamera.transform.position;
-            miniCamera.transform.rotation = mainCamera.transform.rotation;
         }
     }
 
@@ -113,6 +101,10 @@ public class SceneController : MonoBehaviour
             // Add to the list of spawned objects
             spawnedObjects.Add(newPoint);
             newPoint.name = label;
+
+            if(isSource) {
+                SetupMiniCamera();
+            }
 
             Debug.Log($"Added Navigation Point: {label} (Source: {isSource}, Destination: {isDestination})");
         }
@@ -210,7 +202,7 @@ public class SceneController : MonoBehaviour
         }
 
         // ----- Flipping -----
-        if (Input.GetKeyDown(KeyCode.F1))
+        if (Input.GetKeyDown(KeyCode.J))
         {
             // Flip along X-axis
             selectedObject.transform.localScale = new Vector3(
@@ -220,7 +212,7 @@ public class SceneController : MonoBehaviour
             );
             transformationOccurred = true;
         }
-        if (Input.GetKeyDown(KeyCode.F2))
+        if (Input.GetKeyDown(KeyCode.G))
         {
             // Flip along Y-axis
             selectedObject.transform.localScale = new Vector3(
@@ -230,7 +222,7 @@ public class SceneController : MonoBehaviour
             );
             transformationOccurred = true;
         }
-        if (Input.GetKeyDown(KeyCode.F3))
+        if (Input.GetKeyDown(KeyCode.H))
         {
             // Flip along Z-axis
             selectedObject.transform.localScale = new Vector3(
@@ -434,41 +426,34 @@ public class SceneController : MonoBehaviour
                 AssignDefaultShader(importedModel);
                 importedModel.transform.position = Vector3.zero;
 
-                // Send scale and rotation information back to Flutter
-                string logMessages = $"Model Scale: {importedModel.transform.localScale}, Rotation: {importedModel.transform.rotation.eulerAngles}";
-                UnityMessageManager.Instance.SendMessageToFlutter(logMessages);
-
-#if UNITY_WEBGL
+                #if UNITY_WEBGL
                     // Flip the model along the X-axis to correct the mirroring issue
                     importedModel.transform.localScale = new Vector3(
                         -importedModel.transform.localScale.x,
                         importedModel.transform.localScale.y,
                         importedModel.transform.localScale.z
                     );
-#endif
-
-#if UNITY_WEBGL
-                    importedModel.transform.Rotate(0, 180, 0);
-#endif
+                #endif
 
                 // Fit the imported model into the camera view
                 FitObjectToCamera(importedModel);
-
                 AddCollidersRecursively(importedModel);
 
                 importedModel.tag = "ImportedObject";
                 spawnedObjects.Add(importedModel);
+
                 // Send scale and rotation information back to Flutter
                 string logMessage = $"Model Scale: {importedModel.transform.localScale}, Rotation: {importedModel.transform.rotation.eulerAngles}";
                 UnityMessageManager.Instance.SendMessageToFlutter(logMessage);
             }
             else
             {
-                Debug.LogError("Failed to load the 3D model .");
+                Debug.LogError("Failed to load the 3D model.");
             }
         }
         yield return null;
     }
+
 
     private void AddCollidersRecursively(GameObject obj)
     {
@@ -501,13 +486,6 @@ public class SceneController : MonoBehaviour
         mainCamera.transform.position = bounds.center - distance * mainCamera.transform.forward;
         mainCamera.nearClipPlane = Mathf.Max(0.01f, distance - objectSize * 1.5f);
         mainCamera.farClipPlane = distance + objectSize * 2f;
-    }
-
-    // Helper method to check if an object has any negative scale values
-    private bool HasNegativeScale(GameObject obj)
-    {
-        Vector3 scale = obj.transform.localScale;
-        return scale.x < 0 || scale.y < 0 || scale.z < 0;
     }
 
     // Helper method to calculate the bounds of the model for the BoxCollider
@@ -571,15 +549,6 @@ public class SceneController : MonoBehaviour
             // Prepare the scene data
             SceneData sceneData = new SceneData();
 
-            // Add camera data
-            sceneData.cameraData = new CameraData
-            {
-                position = miniCamera.transform.position,
-                rotation = miniCamera.transform.rotation,
-                fieldOfView = miniCamera.fieldOfView
-            };
-
-
             foreach (GameObject obj in spawnedObjects)
             {
                 if (obj.CompareTag("NavigationLine"))
@@ -590,6 +559,18 @@ public class SceneController : MonoBehaviour
                     if (navPoint == null)
                     {
                         Debug.LogError("NavigationPoint component is missing on the prefab!");
+                    }
+
+                    if (navPoint.IsSource) {
+                        Camera srouceCam = sourcePrefab.GetComponentInChildren<Camera>();
+                        
+                        // Add camera data
+                        sceneData.cameraData = new CameraData
+                        {
+                            position = srouceCam.transform.position,
+                            rotation = srouceCam.transform.rotation,
+                            fieldOfView = srouceCam.fieldOfView
+                        };
                     }
 
                     SceneObjectData navData = new SceneObjectData
@@ -777,12 +758,12 @@ public class SceneController : MonoBehaviour
             }
 
             // Apply camera data
-            if (sceneData.cameraData != null)
-            {
-                mainCamera.transform.position = sceneData.cameraData.position;
-                mainCamera.transform.rotation = sceneData.cameraData.rotation;
-                mainCamera.fieldOfView = sceneData.cameraData.fieldOfView;
-            }
+            // if (sceneData.cameraData != null)
+            // {
+            //     mainCamera.transform.position = sceneData.cameraData.position;
+            //     mainCamera.transform.rotation = sceneData.cameraData.rotation;
+            //     mainCamera.fieldOfView = sceneData.cameraData.fieldOfView;
+            // }
 
             // Load objects from metadata
             foreach (var objData in sceneData.objects)
@@ -793,6 +774,7 @@ public class SceneController : MonoBehaviour
                     
                     if (objData.isSource) {
                        navPoint = Instantiate(sourcePrefab, objData.position, objData.rotation);
+                       SetupMiniCamera();
                     } else {
                         navPoint = Instantiate(navigationPointPrefab, objData.position, objData.rotation);
                     }

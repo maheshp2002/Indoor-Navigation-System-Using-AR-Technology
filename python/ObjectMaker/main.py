@@ -1,4 +1,5 @@
 import os
+import base64
 import zipfile
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
@@ -66,10 +67,36 @@ async def upload_and_process(file: UploadFile = File(...)):
 
         # Check if the 3D model was generated
         obj_output_path = os.path.join(output_path, 'texturedMesh.obj')
-        if os.path.exists(obj_output_path):
-            print(f"3D model generated at: {obj_output_path}")  # Debug print
-        else:
+        mtl_output_path = os.path.join(output_path, 'texturedMesh.mtl')
+        exr_output_path = os.path.join(output_path, 'texturedMesh.exr')
+
+        if not os.path.exists(obj_output_path):
             raise HTTPException(status_code=500, detail="3D model generation failed.")
+
+        print(f"3D model generated at: {obj_output_path}")  # Debug print
+
+        print(f"3D model generated at: {obj_output_path}")  # Debug print
+
+        # Create a ZIP file with the generated .obj, .mtl, and .exr files
+        zip_filename = "3D_model_output.zip"
+        zip_filepath = os.path.join(output_path, zip_filename)
+
+        with zipfile.ZipFile(zip_filepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            zipf.write(obj_output_path, os.path.basename(obj_output_path))
+            if os.path.exists(mtl_output_path):
+                zipf.write(mtl_output_path, os.path.basename(mtl_output_path))
+            if os.path.exists(exr_output_path):
+                zipf.write(exr_output_path, os.path.basename(exr_output_path))
+
+        print(f"Created ZIP file at: {zip_filepath}")  # Debug print
+
+        # Convert ZIP file to Base64
+        with open(zip_filepath, "rb") as zip_file:
+            zip_base64 = base64.b64encode(zip_file.read()).decode("utf-8")
+
+        # Delete the ZIP file after conversion
+        os.remove(zip_filepath)
+        print("Deleted ZIP file after conversion.")  # Debug print
 
         # Clean up images in the upload folder
         for filename in os.listdir(UPLOAD_FOLDER):
@@ -80,7 +107,7 @@ async def upload_and_process(file: UploadFile = File(...)):
         print("Cleaned up images in upload folder.")  # Debug print
 
         # Return success response with the output file path
-        return JSONResponse(content={'message': '3D reconstruction completed', 'output_file': obj_output_path})
+        return JSONResponse(content={'message': '3D reconstruction completed', 'zip_base64': zip_base64})
 
     except Exception as e:
         print(f"Error: {str(e)}")  # Print error details to the console

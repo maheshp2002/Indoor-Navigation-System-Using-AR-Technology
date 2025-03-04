@@ -2,3 +2,4 @@ uvicorn
 werkzeug
 fastapi
 opencv-python
+base64

@@ -18,7 +18,7 @@ class UserNavigation extends StatefulWidget {
 }
 
 class UserNavigationState extends State<UserNavigation> {
-  late UnityWidgetController _unityController;
+  late UnityWidgetController? _unityController;
   String? email = FirebaseAuth.instance.currentUser?.email;
   String? _mapsUrl;
   List<String> destinationList = [];
@@ -36,7 +36,8 @@ class UserNavigationState extends State<UserNavigation> {
       final response = await http.get(Uri.parse(mapsUrl));
       if (response.statusCode == 200) {
         final base64String = base64Encode(response.bodyBytes);
-        _unityController.postMessage(
+        print("ImportSceneFromBase64ForNavigationLine");
+        _unityController!.postMessage(
             'NavigationController', 'ImportSceneFromBase64ForNavigationLine', base64String);
       } else {
         showToast('Internal Server Error', isSuccess: false);
@@ -95,7 +96,7 @@ class UserNavigationState extends State<UserNavigation> {
                 });
 
                 // Send the selected destination to Unity
-                _unityController.postMessage(
+                _unityController!.postMessage(
                   'NavigationController',
                   'SetDestination',
                   selectedDestination!,
@@ -115,17 +116,18 @@ class UserNavigationState extends State<UserNavigation> {
   }
 
   void initUnity(bool isAdmin) {
-    _unityController.postMessage(
+    _unityController!.postMessage(
         "CanvasManager", "SetMode", isAdmin.toString());
   }
 
-  void onUnityCreated(UnityWidgetController controller) {
+  void onUnityCreated(UnityWidgetController controller) async  {
     _unityController = controller;
     initUnity(false);
     if (_mapsUrl != null && _mapsUrl != null) {
       _loadInitialSceneFromUrl(widget.mapsUrl!);
     }
   }
+
 
   Future<void> onUnityMessage(dynamic message) async {
     print('Received message from Unity: $message');
@@ -144,4 +146,4 @@ class UserNavigationState extends State<UserNavigation> {
       print('Error processing Unity message: $e');
     }
   }
-}
+  }
