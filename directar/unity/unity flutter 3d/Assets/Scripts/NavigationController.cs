@@ -154,6 +154,7 @@ public class NavigationController : MonoBehaviour
         navPoint.name = objData.name;
         navPoint.isStatic = true;
         navPoint.GetComponentInChildren<TextMeshPro>().text = objData.label;
+        navPoint.layer = LayerMask.NameToLayer("AR Content");
 
         return navPoint;
     }
@@ -220,13 +221,9 @@ public class NavigationController : MonoBehaviour
 
         Debug.Log("NavMesh successfully baked!");
 
-        if (destinationPoints.TryGetValue(destinationPoints.Keys.First(), out Transform target))
-        {
-            ShowNavigationPath(target.position);
-        }
+        SetDefaultNavigationPath();
 
-        LogNavMeshData();
-        VisualizeNavMesh();
+        // VisualizeNavMesh();
         Debug.Log("VisualizeNavMesh added successfully!");
     }
 
@@ -281,28 +278,6 @@ public class NavigationController : MonoBehaviour
         line.transform.SetParent(parent.transform);
     }
 
-    void LogNavMeshData()
-    {
-        var triangulation = NavMesh.CalculateTriangulation();
-
-        Debug.Log($"NavMesh Triangulation: {triangulation.vertices.Length} vertices, {triangulation.indices.Length / 3} triangles");
-
-        for (int i = 0; i < triangulation.vertices.Length; i++)
-        {
-            Debug.Log($"Vertex {i}: {triangulation.vertices[i]}");
-        }
-
-        for (int i = 0; i < triangulation.indices.Length; i += 3)
-        {
-            Vector3 v1 = triangulation.vertices[triangulation.indices[i]];
-            Vector3 v2 = triangulation.vertices[triangulation.indices[i + 1]];
-            Vector3 v3 = triangulation.vertices[triangulation.indices[i + 2]];
-
-            Debug.Log($"Triangle {i / 3}: {v1}, {v2}, {v3}");
-        }
-    }
-
-
     private GameObject FindMeshObject(GameObject obj)
     {
         // Check if the current object has MeshRenderer or MeshFilter
@@ -317,7 +292,6 @@ public class NavigationController : MonoBehaviour
             GameObject found = FindMeshObject(child.gameObject);
             if (found != null)
             {
-                Debug.Log($"macs {found}");
                 return found;
             }
         }
@@ -347,6 +321,10 @@ public class NavigationController : MonoBehaviour
         if (destinationPoints.TryGetValue(targetLabel, out Transform target))
         {
             ShowNavigationPath(target.position);
+        }
+        else if (destinationPoints.TryGetValue(destinationPoints.Keys.First(), out Transform defaultTarget))
+        {
+            ShowNavigationPath(defaultTarget.position);
         }
         else
         {
@@ -398,11 +376,12 @@ public class NavigationController : MonoBehaviour
         // Calculate path
         if (NavMesh.CalculatePath(startPosition, targetPosition, NavMesh.AllAreas, path) && path.status == NavMeshPathStatus.PathComplete)
         {
+            pathLine.positionCount = 0;
             pathLine.positionCount = path.corners.Length;
             pathLine.SetPositions(path.corners);
             pathLine.startColor = Color.red;
             pathLine.endColor = Color.blue;
-            Debug.Log("Navigation path updated.");
+            Debug.Log($"Navigation path updated.{path.corners.Length}, {path.corners}");
         } 
         else
         {
