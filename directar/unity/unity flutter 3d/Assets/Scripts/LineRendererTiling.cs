@@ -3,7 +3,7 @@
 public class LineRendererTiling : MonoBehaviour
 {
     public LineRenderer lineRenderer;
-    public float tilingMultiplier = 1.0f;
+    public float tilingMultiplier = 5.0f;
 
     void Update()
     {

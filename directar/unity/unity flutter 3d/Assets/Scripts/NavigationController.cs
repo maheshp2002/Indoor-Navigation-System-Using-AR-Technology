@@ -50,12 +50,15 @@ public class NavigationController : MonoBehaviour
     private OBJLoader objLoader = new OBJLoader();
     private Dictionary<string, Transform> destinationPoints = new Dictionary<string, Transform>();
     private string defaultDestination;
+    private GameObject sceneRoot;
 
     void Start()
     {
         #if UNITY_ANDROID
-            Camera.main.clearFlags = CameraClearFlags.Depth; // No background, keeps AR view
+            Camera.main.clearFlags = CameraClearFlags.SolidColor;
+            Camera.main.backgroundColor = Color.clear;
             Camera.main.cullingMask = LayerMask.GetMask("AR Content", "UI", "Walkable"); // Show only AR layers
+            sceneRoot = new GameObject("SceneRoot");
             Input.multiTouchEnabled = false;
         #endif
     }
@@ -148,7 +151,7 @@ public class NavigationController : MonoBehaviour
         } else {
             navPoint = Instantiate(sourcePrefab, objData.position, objData.rotation);
         }
-        navPoint.transform.SetParent(null, true);
+        navPoint.transform.SetParent(sceneRoot.transform, true);
         navPoint.transform.localScale = objData.scale;
         navPoint.tag = objData.type;
         navPoint.name = objData.name;
@@ -165,7 +168,7 @@ public class NavigationController : MonoBehaviour
         if (!File.Exists(modelPath)) return;
 
         GameObject importedModel = objLoader.Load(modelPath);
-        importedModel.transform.SetParent(null, true);
+        importedModel.transform.SetParent(sceneRoot.transform, true);
         if (importedModel == null) return;
 
         GameObject meshObject = FindMeshObject(importedModel);
@@ -188,7 +191,8 @@ public class NavigationController : MonoBehaviour
         }
         NavMeshSurface navMeshSurface = meshObject.AddComponent<NavMeshSurface>();
         navMeshSurface.collectObjects = CollectObjects.All;
-        navMeshSurface.layerMask = LayerMask.GetMask("Walkable");    
+        navMeshSurface.layerMask = LayerMask.GetMask("Walkable");  
+        SetLayerRecursively(meshObject, LayerMask.NameToLayer("Walkable"));  
         Debug.Log($"{meshObject.name} assigned to layer: {meshObject.layer}");
     }
 
@@ -224,7 +228,6 @@ public class NavigationController : MonoBehaviour
         SetDefaultNavigationPath();
 
         // VisualizeNavMesh();
-        Debug.Log("VisualizeNavMesh added successfully!");
     }
 
     void VisualizeNavMesh()
@@ -348,9 +351,6 @@ public class NavigationController : MonoBehaviour
         NavMeshPath path = new NavMeshPath();
         Vector3 startPosition = xrOrigin.transform.position; // Use XR Origin position as the player position
 
-        Debug.Log($"XR Origin Position: {startPosition}");
-        Debug.Log($"Original Target Position: {targetPosition}");
-
         // Ensure target position is on the NavMesh
         if (!NavMesh.SamplePosition(targetPosition, out NavMeshHit hit, 5.0f, NavMesh.AllAreas))
         {
@@ -359,8 +359,6 @@ public class NavigationController : MonoBehaviour
         }
         
         targetPosition = hit.position;  // Adjusted valid NavMesh position
-
-        Debug.Log($"Adjusted Target Position (On NavMesh): {targetPosition}");
 
         // Ensure player (xrOrigin) position is also on the NavMesh
         if (!NavMesh.SamplePosition(startPosition, out NavMeshHit startHit, 5.0f, NavMesh.AllAreas))
@@ -371,22 +369,25 @@ public class NavigationController : MonoBehaviour
 
         startPosition = startHit.position; // Adjusted valid start position
 
-        Debug.Log($"Adjusted Start Position (On NavMesh): {startPosition}");
-
         // Calculate path
         if (NavMesh.CalculatePath(startPosition, targetPosition, NavMesh.AllAreas, path) && path.status == NavMeshPathStatus.PathComplete)
         {
+            pathLine.widthMultiplier = 0.8f;
             pathLine.positionCount = 0;
             pathLine.positionCount = path.corners.Length;
             pathLine.SetPositions(path.corners);
-            pathLine.startColor = Color.red;
-            pathLine.endColor = Color.blue;
-            Debug.Log($"Navigation path updated.{path.corners.Length}, {path.corners}");
         } 
         else
         {
             Debug.LogError($"Path calculation failed: No valid path. {startPosition} → {targetPosition}");
             pathLine.positionCount = 0;
+        }
+    }
+
+    private void SetLayerRecursively(GameObject obj, int layer) {
+        obj.layer = layer;
+        foreach (Transform child in obj.transform) {
+            SetLayerRecursively(child.gameObject, layer);
         }
     }
 

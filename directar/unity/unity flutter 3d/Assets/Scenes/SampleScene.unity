@@ -154,7 +154,7 @@ MonoBehaviour:
   unityMessageSender: {fileID: 1763169352}
   xrOrigin: {fileID: 960583988}
   navigationPointPrefab: {fileID: 817901379919154142, guid: df881c1c043359d42b500f9b3f493b44, type: 3}
-  sourcePrefab: {fileID: 3839293363246891236, guid: af4983b029bfbe74f8cfe3510c818c27, type: 3}
+  sourcePrefab: {fileID: 817901379919154142, guid: df881c1c043359d42b500f9b3f493b44, type: 3}
   pathLine: {fileID: 1002348631}
 --- !u!4 &22057755
 Transform:
@@ -2187,7 +2187,7 @@ LineRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.18433067
+        value: 0.5
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -3012,7 +3012,6 @@ GameObject:
   - component: {fileID: 1503375138}
   - component: {fileID: 1503375137}
   - component: {fileID: 1503375136}
-  - component: {fileID: 1503375141}
   m_Layer: 5
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -3235,23 +3234,6 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!114 &1503375141
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1503375134}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b15f82cc229284894964d2d30806969d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_HumanSegmentationStencilMode: 0
-  m_HumanSegmentationDepthMode: 0
-  m_EnvironmentDepthMode: 3
-  m_EnvironmentDepthTemporalSmoothing: 1
-  m_OcclusionPreferenceMode: 0
 --- !u!1 &1534982128
 GameObject:
   m_ObjectHideFlags: 0
