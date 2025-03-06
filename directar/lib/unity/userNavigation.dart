@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_unity_widget/flutter_unity_widget.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-
+import 'package:flutter_tts/flutter_tts.dart';
 import '../components/themeManager.dart';
 
 class UserNavigation extends StatefulWidget {
@@ -20,6 +20,7 @@ class UserNavigation extends StatefulWidget {
 class UserNavigationState extends State<UserNavigation> {
   late UnityWidgetController? _unityController;
   String? email = FirebaseAuth.instance.currentUser?.email;
+  final FlutterTts flutterTts = FlutterTts();
   String? _mapsUrl;
   List<String> destinationList = [];
   String? selectedDestination;
@@ -37,8 +38,8 @@ class UserNavigationState extends State<UserNavigation> {
       if (response.statusCode == 200) {
         final base64String = base64Encode(response.bodyBytes);
         print("ImportSceneFromBase64ForNavigationLine");
-        _unityController!.postMessage(
-            'NavigationController', 'ImportSceneFromBase64ForNavigationLine', base64String);
+        _unityController!.postMessage('NavigationController',
+            'ImportSceneFromBase64ForNavigationLine', base64String);
       } else {
         showToast('Internal Server Error', isSuccess: false);
       }
@@ -102,7 +103,8 @@ class UserNavigationState extends State<UserNavigation> {
                   selectedDestination!,
                 );
               },
-              items: destinationList.map<DropdownMenuItem<String>>((String value) {
+              items:
+                  destinationList.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(value),
@@ -116,11 +118,11 @@ class UserNavigationState extends State<UserNavigation> {
   }
 
   void initUnity(bool isAdmin) {
-    _unityController!.postMessage(
-        "CanvasManager", "SetMode", isAdmin.toString());
+    _unityController!
+        .postMessage("CanvasManager", "SetMode", isAdmin.toString());
   }
 
-  void onUnityCreated(UnityWidgetController controller) async  {
+  void onUnityCreated(UnityWidgetController controller) async {
     _unityController = controller;
     initUnity(false);
     if (_mapsUrl != null && _mapsUrl != null) {
@@ -128,12 +130,13 @@ class UserNavigationState extends State<UserNavigation> {
     }
   }
 
-
   Future<void> onUnityMessage(dynamic message) async {
     print('Received message from Unity: $message');
     try {
       // Parse the JSON message from Unity
       final Map<String, dynamic> data = jsonDecode(message);
+      
+      // Handle destination list update
       if (data.containsKey('destinations')) {
         setState(() {
           destinationList = List<String>.from(data['destinations']);
@@ -142,8 +145,26 @@ class UserNavigationState extends State<UserNavigation> {
           }
         });
       }
+
+      // Handle navigation instructions
+      if (data.containsKey("navigationInstructions")) {
+        List<String> instructions = List<String>.from(data["navigationInstructions"]);
+        
+        for (int i = 0; i < instructions.length; i++) {
+          Future.delayed(Duration(seconds: 2 * i), () {
+            _speak(instructions[i]);
+          });
+        }
+      }
     } catch (e) {
       print('Error processing Unity message: $e');
     }
   }
+
+  void _speak(String text) async {
+    await flutterTts.setLanguage("en-US"); 
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.speak(text);
   }
+}

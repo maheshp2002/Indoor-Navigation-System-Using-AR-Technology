@@ -60,7 +60,8 @@ dependencies:
   fluttertoast: ^8.2.10
   image_picker: ^1.0.7 
   archive: ^3.3.6
-
+  flutter_tts: ^3.0.0
+  
   # Others
   provider: ^6.1.2
   ulid: ^2.0.1

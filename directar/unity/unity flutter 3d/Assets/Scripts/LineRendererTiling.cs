@@ -15,7 +15,8 @@ public class LineRendererTiling : MonoBehaviour
         }
 
         // Set the tiling based on the total length and multiplier
+        float lineWidth = lineRenderer.widthMultiplier;
         Material lineMaterial = lineRenderer.material;
-        lineMaterial.mainTextureScale = new Vector2(totalLength * tilingMultiplier, 1);
+        lineMaterial.mainTextureScale = new Vector2(totalLength * tilingMultiplier / lineWidth, 1);
     }
 }

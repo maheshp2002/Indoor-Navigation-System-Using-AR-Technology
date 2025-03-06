@@ -2178,7 +2178,6 @@ LineRenderer:
   m_SortingOrder: 0
   m_Positions:
   - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 0, z: 1}
   m_Parameters:
     serializedVersion: 3
     widthMultiplier: 1
@@ -2187,7 +2186,7 @@ LineRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 0.5
+        value: 1
         inSlope: 0
         outSlope: 0
         tangentMode: 0
@@ -2251,7 +2250,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lineRenderer: {fileID: 1002348631}
-  tilingMultiplier: 3.71
+  tilingMultiplier: 1
 --- !u!1 &1111413985
 GameObject:
   m_ObjectHideFlags: 0
@@ -2419,7 +2418,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultMaterial: {fileID: 2100000, guid: d72fa7eb3879f4941b0571f01f6182ba, type: 2}
-  navigationPointPrefab: {fileID: 3839293363246891236, guid: af4983b029bfbe74f8cfe3510c818c27, type: 3}
+  navigationPointPrefab: {fileID: 817901379919154142, guid: df881c1c043359d42b500f9b3f493b44, type: 3}
   sourcePrefab: {fileID: 6694975826537714914, guid: 237b8540afc1b6740972c195f71b1d13, type: 3}
   canvasUI: {fileID: 1448671060}
   miniCamera: {fileID: 0}
