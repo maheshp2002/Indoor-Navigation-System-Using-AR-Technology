@@ -55,6 +55,10 @@ public class NavigationController : MonoBehaviour
     private string lastInstruction = "";
     private float lastInstructionTime = 0f;
     private int currentPathIndex = 0;
+    private float instructionCooldown = 2.0f; // Prevents instructions from repeating too often
+    private string lastSpokenInstruction = "";
+    private int repeatCount = 0;
+    private Vector3 lastUserPosition;
 
     void Start()
     {
@@ -100,10 +104,8 @@ public class NavigationController : MonoBehaviour
         {
             // Create the temporary directory
             Directory.CreateDirectory(tempFolder);
-
             // Extract the zip file
             ZipFile.ExtractToDirectory(zipFilePath, tempFolder);
-
             // Check for sceneData.json
             string jsonPath = Path.Combine(tempFolder, "sceneData.json");
             string json = File.ReadAllText(jsonPath);
@@ -111,7 +113,6 @@ public class NavigationController : MonoBehaviour
 
             foreach (var objData in sceneData.objects)
             {
-                Debug.LogError($"navigation point for {objData} {objData.name}");
                 if (objData.type == "NavigationLine" && objData.isSource == true)
                 {
                     SetupNavigationPoint(objData);
@@ -132,7 +133,6 @@ public class NavigationController : MonoBehaviour
             SendDestinationLabelsToFlutter();   
             // Bake after a short delay to ensure all objects are included
             Invoke(nameof(BakeNavMesh), 2.0f);
-
             // Delete temp folder after baking NavMesh
             StartCoroutine(DeleteTempFolderAfterNavMesh(tempFolder));
         }
@@ -169,6 +169,7 @@ public class NavigationController : MonoBehaviour
 
         GameObject importedModel = objLoader.Load(modelPath);
         importedModel.transform.SetParent(sceneRoot.transform, true);
+
         if (importedModel == null) return;
 
         // Find all mesh objects
@@ -199,10 +200,7 @@ public class NavigationController : MonoBehaviour
             }
             meshObject.layer = LayerMask.NameToLayer("Walkable");
         }
-
-        Debug.Log($"{objData.name} imported with {meshObjects.Count} mesh objects assigned to NavMesh.");
     }
-
 
      private void HideRenderers(List<GameObject> objects)
     {
@@ -411,80 +409,106 @@ public class NavigationController : MonoBehaviour
 
     private void ProvideVoiceNavigation(NavMeshPath path)
     {
-        if (path.corners.Length < 2) return; // No valid path
-
-        List<string> instructions = new List<string>();
-        float minDistanceThreshold = 1.5f; // Avoid tiny movements triggering voice commands
+        if (path.corners.Length < 2) return;
 
         Vector3 userPosition = xrOrigin.transform.position;
 
-        // If user has moved to the next path segment
-        if (currentPathIndex < path.corners.Length - 1)
-        {
-            Vector3 current = path.corners[currentPathIndex];
-            Vector3 next = path.corners[currentPathIndex + 1];
+        // Prevent instruction flooding
+        if (Time.time - lastInstructionTime < instructionCooldown) return;
 
-            // Check if user has reached the next segment
-            if (Vector3.Distance(userPosition, next) < minDistanceThreshold)
+        if (currentPathIndex == 0) {
+            GiveInitialInstruction(path);
+        } else {
+            // Ensure user moved at least 0.3 meters before next instruction
+            if (Vector3.Distance(userPosition, lastUserPosition) < 0.3f) return;
+
+            if (currentPathIndex < path.corners.Length - 1)
             {
-                currentPathIndex++; // Move to the next segment
+                Vector3 current = path.corners[currentPathIndex];
+                Vector3 next = path.corners[currentPathIndex + 1];
 
-                // Issue move forward instruction when reaching a new straight segment
-                if (currentPathIndex < path.corners.Length - 1)
+                float distanceToNext = Vector3.Distance(userPosition, next);
+                float segmentLength = Vector3.Distance(current, next);
+                float threshold = Mathf.Max(segmentLength * 0.3f, 1.5f); // Min threshold of 1.5m to avoid jittery instructions
+
+                if (distanceToNext < threshold) 
                 {
-                    float distance = Vector3.Distance(next, path.corners[currentPathIndex + 1]);
-                    if (distance >= minDistanceThreshold)
-                    {
-                        string moveInstruction = $"Move forward {Mathf.Round(distance)} meters.";
-                        instructions.Add(moveInstruction);
-                        lastInstruction = moveInstruction;
-                        lastInstructionTime = Time.time;
-                    }
-                }
-            }
-
-            // Check for turn instructions
-            if (currentPathIndex < path.corners.Length - 2)
-            {
-                Vector3 direction = (next - current).normalized;
-                Vector3 nextDirection = (path.corners[currentPathIndex + 2] - next).normalized;
-
-                float angle = Vector3.SignedAngle(direction, nextDirection, Vector3.up);
-                string turnInstruction = "";
-
-                if (angle > 30 && angle < 150)
-                    turnInstruction = "Turn right.";
-                else if (angle < -30 && angle > -150)
-                    turnInstruction = "Turn left.";
-                else if (Mathf.Abs(angle) >= 150)
-                    turnInstruction = "Take a U-turn.";
-
-                if (!string.IsNullOrEmpty(turnInstruction) && turnInstruction != lastInstruction)
-                {
-                    instructions.Add(turnInstruction);
-                    lastInstruction = turnInstruction;
+                    currentPathIndex++;
+                    GiveNextInstruction(path);
                     lastInstructionTime = Time.time;
+                    lastUserPosition = userPosition;
                 }
             }
         }
+    }
 
-        // Final instruction when reaching destination
-        if (currentPathIndex >= path.corners.Length - 1)
+    private void GiveInitialInstruction(NavMeshPath path)
+    {
+        if (path.corners.Length < 2) return;
+
+        Vector3 start = path.corners[0];
+        Vector3 next = path.corners[1];
+        float initialDistance = Vector3.Distance(start, next);
+        string instruction = $"Start moving forward {Mathf.Round(initialDistance)} meters.";
+
+        lastInstructionTime = Time.time;
+        currentPathIndex = 1; // Ensure it starts from the second point
+        SendVoiceInstruction(instruction);
+    }
+
+    private void GiveNextInstruction(NavMeshPath path)
+    {
+        if (currentPathIndex >= path.corners.Length - 1) return;
+
+        Vector3 current = path.corners[currentPathIndex];
+        Vector3 next = path.corners[currentPathIndex + 1];
+        float forwardDistance = Vector3.Distance(current, next);
+        string turnInstruction = null;
+
+        if (currentPathIndex < path.corners.Length - 2)
         {
-            string destinationInstruction = "You have reached your destination.";
-            if (destinationInstruction != lastInstruction)
+            Vector3 nextSegment = path.corners[currentPathIndex + 2];
+            Vector3 direction = (next - current).normalized;
+            Vector3 nextDirection = (nextSegment - next).normalized;
+            float angle = Vector3.SignedAngle(direction, nextDirection, Vector3.up);
+
+            if (Mathf.Abs(angle) > 20) // Ignore small angle deviations
             {
-                instructions.Add(destinationInstruction);
-                lastInstruction = destinationInstruction;
-                lastInstructionTime = Time.time;
+                if (angle > 30 && angle < 150) turnInstruction = "Turn right";
+                else if (angle < -30 && angle > -150) turnInstruction = "Turn left";
+                else if (Mathf.Abs(angle) >= 150) turnInstruction = "Take a U-turn";
             }
         }
 
-        // Send to Flutter for voice output if there are new instructions
-        if (instructions.Count > 0)
+        string finalInstruction = turnInstruction != null
+            ? $"{turnInstruction} and move forward {Mathf.Round(forwardDistance)} meters."
+            : $"Move forward {Mathf.Round(forwardDistance)} meters.";
+
+        SendVoiceInstruction(finalInstruction);
+        lastInstructionTime = Time.time; // Update last instruction time
+    }
+
+    private void SendVoiceInstruction(string instruction)
+    {
+        if (instruction == lastSpokenInstruction)
         {
-            unityMessageSender.SendMessageToFlutter(JsonConvert.SerializeObject(new { navigationInstructions = instructions }));
+            repeatCount++;
+            if (repeatCount > 2) // Ignore if repeated more than twice
+            {
+                Debug.Log($"[Blocked] Repeating instruction ignored: {instruction}");
+                return;
+            }
         }
+        else
+        {
+            repeatCount = 0; // Reset if new instruction comes
+        }
+
+        lastSpokenInstruction = instruction; // Store last instruction
+
+        string jsonMessage = JsonConvert.SerializeObject(new { navigationInstructions = new List<string> { instruction } });
+        unityMessageSender.SendMessageToFlutter(jsonMessage);
+        Debug.Log($"Voice Navigation: {instruction}");
     }
 
     public void SendDestinationLabelsToFlutter()
