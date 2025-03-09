@@ -441,7 +441,6 @@ public class NavigationController : MonoBehaviour
             }
         }
     }
-
     private void GiveInitialInstruction(NavMeshPath path)
     {
         if (path.corners.Length < 2) return;
