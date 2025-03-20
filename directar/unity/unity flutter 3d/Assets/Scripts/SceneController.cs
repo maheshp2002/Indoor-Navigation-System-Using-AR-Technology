@@ -33,6 +33,10 @@ public class SceneController : MonoBehaviour
     [SerializeField] private RenderTexture miniCameraRenderTexture;
     [SerializeField] private QRCodeGenerator qrCodeGenerator;
     [SerializeField] private UnityMessageSender unityMessageSender;
+    private float holdTimeM = 0f;
+    private float holdTimeN = 0f;
+    public float speedMultiplier = 2f;
+    public float baseSpeed = 5f; 
 
     void Start()
     {
@@ -288,12 +292,13 @@ public class SceneController : MonoBehaviour
                 transformationOccurred = true;
             }
         }
+
         // Prevent negative or too small scaling
-        selectedObject.transform.localScale = new Vector3(
-            Mathf.Max(selectedObject.transform.localScale.x, 0.1f),
-            Mathf.Max(selectedObject.transform.localScale.y, 0.1f),
-            Mathf.Max(selectedObject.transform.localScale.z, 0.1f)
-        );
+        // selectedObject.transform.localScale = new Vector3(
+        //     Mathf.Abs(selectedObject.transform.localScale.x) < 0.1f ? 0.1f : -selectedObject.transform.localScale.x,
+        //     Mathf.Abs(selectedObject.transform.localScale.y) < 0.1f ? 0.1f : selectedObject.transform.localScale.y,
+        //     Mathf.Abs(selectedObject.transform.localScale.z) < 0.1f ? 0.1f : selectedObject.transform.localScale.z
+        // );
 
         // ----- Movement -----
         if (Input.GetMouseButton(1))
@@ -315,13 +320,28 @@ public class SceneController : MonoBehaviour
             // Move object along X, Y, and Z axes
             float adjustedSpeed = moveSpeed * Time.deltaTime;
 
-            if (Input.GetKey(KeyCode.M)) // Move up along Y-axis
+            // **Speed up when M is held**
+            if (Input.GetKey(KeyCode.M))
             {
-                selectedObject.transform.Translate(Vector3.up * adjustedSpeed, Space.World);
+                holdTimeM += Time.deltaTime;
+                float speedFactor = 1f + (speedMultiplier - 1f) * Mathf.Clamp01(holdTimeM); // Increase progressively
+                selectedObject.transform.Translate(Vector3.up * adjustedSpeed * speedFactor, Space.World);
             }
-            else if (Input.GetKey(KeyCode.N)) // Move down along Y-axis
+            else
             {
-                selectedObject.transform.Translate(Vector3.down * adjustedSpeed, Space.World);
+                holdTimeM = 0f; // Reset when released
+            }
+
+            // **Speed up when N is held**
+            if (Input.GetKey(KeyCode.N))
+            {
+                holdTimeN += Time.deltaTime;
+                float speedFactor = 1f + (speedMultiplier - 1f) * Mathf.Clamp01(holdTimeN);
+                selectedObject.transform.Translate(Vector3.down * adjustedSpeed * speedFactor, Space.World);
+            }
+            else
+            {
+                holdTimeN = 0f;
             }
 
             transformationOccurred = true;
@@ -390,11 +410,15 @@ public class SceneController : MonoBehaviour
             mainCamera.transform.rotation = Quaternion.Euler(0, -90, 0);
         }
 
+        float speedFactor = 1f;
+        // **Camera movement with adjustable speed**
+        float adjustedSpeed = baseSpeed * speedFactor * Time.deltaTime;
+        
         // Camera movement controls
-        if (Input.GetKey(KeyCode.W)) mainCamera.transform.Translate(Vector3.forward * Time.deltaTime);
-        if (Input.GetKey(KeyCode.S)) mainCamera.transform.Translate(Vector3.back * Time.deltaTime);
-        if (Input.GetKey(KeyCode.A)) mainCamera.transform.Translate(Vector3.left * Time.deltaTime);
-        if (Input.GetKey(KeyCode.D)) mainCamera.transform.Translate(Vector3.right * Time.deltaTime);
+        if (Input.GetKey(KeyCode.W)) mainCamera.transform.Translate(Vector3.forward * adjustedSpeed);
+        if (Input.GetKey(KeyCode.S)) mainCamera.transform.Translate(Vector3.back * adjustedSpeed);
+        if (Input.GetKey(KeyCode.A)) mainCamera.transform.Translate(Vector3.left * adjustedSpeed);
+        if (Input.GetKey(KeyCode.D)) mainCamera.transform.Translate(Vector3.right * adjustedSpeed);
         if (Input.GetKey(KeyCode.Q)) mainCamera.transform.Rotate(Vector3.up, -1);
         if (Input.GetKey(KeyCode.E)) mainCamera.transform.Rotate(Vector3.up, 1);
         if (Input.GetKey(KeyCode.Space)) mainCamera.transform.Translate(Vector3.up * Time.deltaTime);
@@ -426,14 +450,14 @@ public class SceneController : MonoBehaviour
                 AssignDefaultShader(importedModel);
                 importedModel.transform.position = Vector3.zero;
 
-                #if UNITY_WEBGL
-                    // Flip the model along the X-axis to correct the mirroring issue
-                    importedModel.transform.localScale = new Vector3(
-                        -importedModel.transform.localScale.x,
-                        importedModel.transform.localScale.y,
-                        importedModel.transform.localScale.z
-                    );
-                #endif
+                // if (Mathf.Abs(importedModel.transform.localScale.x) > 0.1f)
+                // {
+                //     importedModel.transform.localScale = new Vector3(
+                //         -importedModel.transform.localScale.x, 
+                //         importedModel.transform.localScale.y, 
+                //         importedModel.transform.localScale.z
+                //     );
+                // }
 
                 // Fit the imported model into the camera view
                 FitObjectToCamera(importedModel);

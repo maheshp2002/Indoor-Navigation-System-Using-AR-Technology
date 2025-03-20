@@ -2185,7 +2185,7 @@ LineRenderer:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0
+        time: 0.50862074
         value: 1
         inSlope: 0
         outSlope: 0
@@ -2389,7 +2389,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1196390391
 Transform:
   m_ObjectHideFlags: 0
@@ -2425,6 +2425,8 @@ MonoBehaviour:
   miniCameraRenderTexture: {fileID: 8400000, guid: 9f5d22c88184703439598dcfa4de50c2, type: 2}
   qrCodeGenerator: {fileID: 1196390393}
   unityMessageSender: {fileID: 1763169352}
+  speedMultiplier: 2
+  baseSpeed: 5
 --- !u!114 &1196390393
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -10,6 +10,8 @@ using TMPro;
 using Dummiesman;
 using Newtonsoft.Json;
 using UnityEngine.AI;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 using System.Collections;
 
 [Serializable]
@@ -151,6 +153,10 @@ public class NavigationController : MonoBehaviour
         } else {
             navPoint = Instantiate(sourcePrefab, objData.position, objData.rotation);
         }
+
+        // Ensure it remains anchored in AR
+        AttachAnchor(navPoint, objData.position, objData.rotation);
+
         navPoint.transform.SetParent(sceneRoot.transform, true);
         navPoint.transform.localScale = objData.scale;
         navPoint.tag = objData.type;
@@ -168,6 +174,7 @@ public class NavigationController : MonoBehaviour
         if (!File.Exists(modelPath)) return;
 
         GameObject importedModel = objLoader.Load(modelPath);
+        AttachAnchor(importedModel, objData.position, objData.rotation);
         importedModel.transform.SetParent(sceneRoot.transform, true);
 
         if (importedModel == null) return;
@@ -340,10 +347,10 @@ public class NavigationController : MonoBehaviour
             // Step Height & Slope from the image
             surface.defaultArea = 0; // Default walkable area
             NavMeshBuildSettings settings = NavMesh.GetSettingsByID(surface.agentTypeID);
-            settings.agentRadius = 0.1f;
-            settings.agentHeight = 1.52f;
+            settings.agentRadius = 1.15f;
+            settings.agentHeight = 1.09f;
             settings.agentSlope = 45f;
-            settings.agentClimb = 0.5f; // Step height from the image
+            settings.agentClimb = 1f; // Step height from the image
 
             surface.BuildNavMesh();
         }
@@ -391,9 +398,9 @@ public class NavigationController : MonoBehaviour
         if (NavMesh.CalculatePath(startPosition, targetPosition, NavMesh.AllAreas, path) && path.status == NavMeshPathStatus.PathComplete)
         {
             pathLine.positionCount = 0;
-            pathLine.widthMultiplier = 0.5f;
-            pathLine.startWidth = 0.5f;
-            pathLine.endWidth = 0.5f;
+            pathLine.widthMultiplier = 2.0f;
+            pathLine.startWidth = 2.0f;
+            pathLine.endWidth = 2.0f;
             pathLine.positionCount = path.corners.Length;
             currentPathIndex = 0; // Reset index for new path
             pathLine.SetPositions(path.corners);
@@ -491,12 +498,12 @@ public class NavigationController : MonoBehaviour
     {
         if (instruction == lastSpokenInstruction)
         {
-            repeatCount++;
-            if (repeatCount > 2) // Ignore if repeated more than twice
-            {
-                Debug.Log($"[Blocked] Repeating instruction ignored: {instruction}");
+            // repeatCount++;
+            // if (repeatCount > 0) // Ignore if repeated more than twice
+            // {
+            //     Debug.Log($"[Blocked] Repeating instruction ignored: {instruction}");
                 return;
-            }
+            // }
         }
         else
         {
@@ -523,6 +530,26 @@ public class NavigationController : MonoBehaviour
         unityMessageSender.SendMessageToFlutter(jsonLabels);
     }
 
+    private void AttachAnchor(GameObject obj, Vector3 position, Quaternion rotation)
+    {
+        var anchorManager = FindObjectOfType<ARAnchorManager>();
+        if (anchorManager == null)
+        {
+            Debug.LogError("ARAnchorManager not found in the scene.");
+            return;
+        }
+
+        ARAnchor anchor = anchorManager.AddAnchor(new Pose(position, rotation));
+        if (anchor != null)
+        {
+            obj.transform.SetParent(anchor.transform, true);
+            Debug.Log($"Anchor attached to {obj.name} at {position}");
+        }
+        else
+        {
+            Debug.LogError("Failed to create an anchor.");
+        }
+    }
     
     // void VisualizeNavMesh()
     // {
