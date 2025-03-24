@@ -57,8 +57,15 @@ class HomeState extends State<Home> {
                 .map((step) => InstructionStep(
                       imagePath: step["imagePath"]!,
                       description: step["description"]!,
-                    ))
-                .toList(),
+                    )),
+            const SizedBox(height: 16),
+            Text(
+              "Note: To get the location of a floor other than the base floor, scan the QR code on that floor.",
+              style: TextStyle(
+                  fontSize: theme.textTheme.bodySmall!.fontSize,
+                  color: AppColors.primaryVariantColor2,
+                  fontWeight: FontWeight.bold),
+            ),
           ],
         ),
       ),
