@@ -81,3 +81,5 @@ node_modules/
 # Fluuter Unity Widget
 android/unityLibrary/
 android/unityLibrary/**
+web/unityLibrary/
+web/unityLibrary/**
