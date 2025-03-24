@@ -232,7 +232,15 @@ class ThreeDModelState extends State<ThreeDModel> {
                       );
                     },
                   )
-                : const Text("No images found"),
+                : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset("assets/gifs/3d-scan-env.gif", width: 150),
+                    Text("Take multiple photos of you environment",
+                      style: theme.textTheme.labelSmall,
+                      textAlign: TextAlign.center
+                    )
+                  ]),
       ),
       floatingActionButton: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
