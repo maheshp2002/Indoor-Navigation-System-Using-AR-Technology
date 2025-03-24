@@ -167,4 +167,11 @@ class UserNavigationState extends State<UserNavigation> {
     await flutterTts.setSpeechRate(0.5);
     await flutterTts.speak(text);
   }
+
+  @override
+  void dispose() {
+    _unityController?.dispose();
+    _unityController = null;
+    super.dispose();
+  }
 }

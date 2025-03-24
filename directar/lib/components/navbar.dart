@@ -1,5 +1,4 @@
 import 'package:directar/3DModel.dart';
-import 'package:directar/QR_Code.dart';
 import 'package:directar/adminPage.dart';
 import 'package:directar/config/constants.dart';
 import 'package:directar/services/firebaseService.dart';
@@ -94,18 +93,7 @@ class NavBarState extends State<NavBar> {
                   MaterialPageRoute(builder: (context) => const ThreeDModel()),
                 );
               },
-            ),
-            ListTile(
-              leading:
-                  Icon(FontAwesomeIcons.qrcode, color: theme.iconTheme.color),
-              title: Text('Scan QR Code', style: theme.textTheme.bodyLarge),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const QrCode()),
-                );
-              },
-            ),
+            )
           ],
           ListTile(
             leading: Icon(FontAwesomeIcons.rightFromBracket,

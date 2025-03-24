@@ -77,3 +77,7 @@ DS_Store
 **/linux/flutter/generatedPluginRegistrant.*
 
 node_modules/
+
+# Fluuter Unity Widget
+android/unityLibrary/
+android/unityLibrary/**

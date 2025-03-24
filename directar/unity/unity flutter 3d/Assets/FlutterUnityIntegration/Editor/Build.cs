@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEngine;
 using Application = UnityEngine.Application;
 using BuildResult = UnityEditor.Build.Reporting.BuildResult;
@@ -32,27 +33,18 @@ namespace FlutterUnityIntegration.Editor
         public static void DoBuildAndroidLibraryDebug()
         {
             DoBuildAndroid(Path.Combine(APKPath, "unityLibrary"), false, false);
-
-            // Copy over resources from the launcher module that are used by the library
-            Copy(Path.Combine(APKPath + "/launcher/src/main/res"), Path.Combine(AndroidExportPath, "src/main/res"));
         }
 
         [MenuItem("Flutter/Export Android (Release) %&m", false, 102)]
         public static void DoBuildAndroidLibraryRelease()
         {
             DoBuildAndroid(Path.Combine(APKPath, "unityLibrary"), false, true);
-
-            // Copy over resources from the launcher module that are used by the library
-            Copy(Path.Combine(APKPath + "/launcher/src/main/res"), Path.Combine(AndroidExportPath, "src/main/res"));
         }
 
         [MenuItem("Flutter/Export Android Plugin %&p", false, 103)]
         public static void DoBuildAndroidPlugin()
         {
             DoBuildAndroid(Path.Combine(APKPath, "unityLibrary"), true, true);
-
-            // Copy over resources from the launcher module that are used by the library
-            Copy(Path.Combine(APKPath + "/launcher/src/main/res"), Path.Combine(AndroidExportPath, "src/main/res"));
         }
 
         [MenuItem("Flutter/Export IOS (Debug) %&i", false, 201)]
@@ -85,8 +77,8 @@ namespace FlutterUnityIntegration.Editor
             BuildWebGL(WebExportPath);
         }
 
-
-        [MenuItem("Flutter/Export Windows %&d", false, 401)]
+      // Hide this button as windows isn't implemented in the Flutter plugin yet.
+      //  [MenuItem("Flutter/Export Windows %&d", false, 401)]
         public static void DoBuildWindowsOS()
         {
             BuildWindowsOS(WindowsExportPath);
@@ -154,6 +146,11 @@ namespace FlutterUnityIntegration.Editor
 
         private static void BuildWebGL(String path)
         {
+            // Check if the Unity project is in the expected location
+            if (!IsProjectLocationValid(path, "web")) {
+                return;
+            }
+
             // Switch to Android standalone build.
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
 
@@ -187,6 +184,11 @@ namespace FlutterUnityIntegration.Editor
 
         private static void DoBuildAndroid(String buildPath, bool isPlugin, bool isReleaseBuild)
         {
+            // Check if the Unity project is in the expected location
+            if (!IsProjectLocationValid(AndroidExportPath, "android")) {
+                return;
+            }
+
             // Switch to Android standalone build.
             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
 
@@ -210,10 +212,10 @@ namespace FlutterUnityIntegration.Editor
             }
             #if UNITY_2022_1_OR_NEWER
                 PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.Android, isReleaseBuild ? Il2CppCompilerConfiguration.Release : Il2CppCompilerConfiguration.Debug);
-                PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.Android, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
+                PlayerSettings.SetIl2CppCodeGeneration(NamedBuildTarget.Android, isReleaseBuild ? Il2CppCodeGeneration.OptimizeSpeed : Il2CppCodeGeneration.OptimizeSize);
             #elif UNITY_2021_2_OR_NEWER
                 PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.Android, isReleaseBuild ? Il2CppCompilerConfiguration.Release : Il2CppCompilerConfiguration.Debug);
-                EditorUserBuildSettings.il2CppCodeGeneration = UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize;
+                EditorUserBuildSettings.il2CppCodeGeneration = isReleaseBuild ? Il2CppCodeGeneration.OptimizeSpeed : Il2CppCodeGeneration.OptimizeSize;
             #endif
 
             // Switch to Android standalone build.
@@ -237,6 +239,9 @@ namespace FlutterUnityIntegration.Editor
             {
                 SetupAndroidProject();
             }
+
+            // Copy over resources from the launcher module that are used by the library, Avoid deleting the existing src/main/res contents.
+            Copy(Path.Combine(APKPath + "/launcher/src/main/res"), Path.Combine(AndroidExportPath, "src/main/res"), false);
 
             if (isReleaseBuild) {
                 Debug.Log($"-- Android Release Build: SUCCESSFUL --");
@@ -281,7 +286,7 @@ namespace FlutterUnityIntegration.Editor
         });
 
         window.parent.addEventListener('unityFlutterBidingFnCal', function (args) {
-            mainUnityInstance.SendMessage('GameManager', 'HandleWebFnCall', args);
+            mainUnityInstance.SendMessage('GameManager', 'HandleWebFnCall', args.data);
         });
         ");
 
@@ -330,6 +335,16 @@ body { padding: 0; margin: 0; overflow: hidden; }
             buildText = buildText.Replace("enableSplit = true", "enable true");
             buildText = buildText.Replace("implementation fileTree(dir: 'libs', include: ['*.jar'])", "implementation(name: 'unity-classes', ext:'jar')");
             buildText = buildText.Replace(" + unityStreamingAssets.tokenize(', ')", "");
+            // disable the Unity ndk path as it will conflict with Flutter.
+            buildText = buildText.Replace("ndkPath \"", "// ndkPath \"");
+
+            // check for namespace definition (Android gradle plugin 8+), add a backwards compatible version if it is missing.
+            if(!buildText.Contains("namespace")) 
+            {
+                buildText = buildText.Replace("compileOptions {",
+                    "if (project.android.hasProperty(\"namespace\")) {\n        namespace 'com.unity3d.player'\n    }\n\n    compileOptions {"
+                );
+            }
 
             if(isPlugin)
             {
@@ -356,8 +371,40 @@ body { padding: 0; margin: 0; overflow: hidden; }
 
         private static void BuildIOS(String path, bool isReleaseBuild)
         {
-            // Switch to ios standalone build.
-            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.iOS, BuildTarget.iOS);
+            // Check if the Unity project is in the expected location
+            if (!IsProjectLocationValid(path, "ios")) {
+                return;
+            }
+
+            bool abortBuild = false;
+
+            // abort iOS export if #UNITY_IOS is false.
+            // Even after SwitchActiveBuildTarget() it will still be false as the code isn't recompiled yet.
+            // As a workaround, make the user trigger an export again after the switch.
+
+#if !UNITY_IOS
+            abortBuild = true;
+            if (Application.isBatchMode)
+            {
+                Debug.LogError("Incorrect iOS buildtarget, use the -buildTarget argument to set iOS");
+            }
+            else
+            {
+                bool dialogResult = EditorUtility.DisplayDialog(
+                    "Switch build target to iOS?",
+                    "Exporting to iOS first requires a build target switch.\nClick 'Export iOS' again after all importing has finished.",
+                    "Switch to iOS",
+                    "Cancel"
+                );
+                if (dialogResult)
+                {
+                    EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.iOS, BuildTarget.iOS);
+                }
+            } 
+#endif
+            //don't return within #if !UNITY_IOS as that results in unreachable code warnings.
+            if (abortBuild)
+                return;
 
             if (Directory.Exists(path))
                 Directory.Delete(path, true);
@@ -370,10 +417,10 @@ body { padding: 0; margin: 0; overflow: hidden; }
 
             #if UNITY_2022_1_OR_NEWER
                 PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.iOS, isReleaseBuild ? Il2CppCompilerConfiguration.Release : Il2CppCompilerConfiguration.Debug);
-                PlayerSettings.SetIl2CppCodeGeneration(UnityEditor.Build.NamedBuildTarget.iOS, UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize);
+                PlayerSettings.SetIl2CppCodeGeneration(NamedBuildTarget.iOS, isReleaseBuild ? Il2CppCodeGeneration.OptimizeSpeed : Il2CppCodeGeneration.OptimizeSize);
             #elif UNITY_2021_2_OR_NEWER
                 PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.iOS, isReleaseBuild ? Il2CppCompilerConfiguration.Release : Il2CppCompilerConfiguration.Debug);
-                EditorUserBuildSettings.il2CppCodeGeneration = UnityEditor.Build.Il2CppCodeGeneration.OptimizeSize;
+                EditorUserBuildSettings.il2CppCodeGeneration = isReleaseBuild ? Il2CppCodeGeneration.OptimizeSpeed : Il2CppCodeGeneration.OptimizeSize;
             #endif
 
             var playerOptions = new BuildPlayerOptions
@@ -396,15 +443,25 @@ body { padding: 0; margin: 0; overflow: hidden; }
             if (report.summary.result != BuildResult.Succeeded)
                 throw new Exception("Build failed");
 
-            //trigger postbuild script manually
+            // log an error if this code is skipped. (might happen when buildtarget is switched from code)
+            bool postBuildExecuted = false;
 #if UNITY_IOS
             XcodePostBuild.PostBuild(BuildTarget.iOS, report.summary.outputPath);
+            postBuildExecuted = true;
 #endif
-
-            if (isReleaseBuild) {
-                Debug.Log("-- iOS Release Build: SUCCESSFUL --");
-            } else {
-                Debug.Log("-- iOS Debug Build: SUCCESSFUL --");
+            if (postBuildExecuted)
+            {
+                if (isReleaseBuild)
+                {
+                    Debug.Log("-- iOS Release Build: SUCCESSFUL --");
+                }
+                else
+                {
+                    Debug.Log("-- iOS Debug Build: SUCCESSFUL --");
+                }
+            } else
+            {
+                Debug.LogError("iOS export failed. Failed to modify Unity's Xcode project.");
             }
         }
 
@@ -412,9 +469,9 @@ body { padding: 0; margin: 0; overflow: hidden; }
 
 
         //#region Other Member Methods
-        private static void Copy(string source, string destinationPath)
+        private static void Copy(string source, string destinationPath, bool clearDestination = true)
         {
-            if (Directory.Exists(destinationPath))
+            if (clearDestination && Directory.Exists(destinationPath))
                 Directory.Delete(destinationPath, true);
 
             Directory.CreateDirectory(destinationPath);
@@ -467,6 +524,12 @@ body { padding: 0; margin: 0; overflow: hidden; }
             var projBuildPath = Path.Combine(androidPath, "build.gradle");
             var appBuildPath = Path.Combine(androidAppPath, "build.gradle");
             var settingsPath = Path.Combine(androidPath, "settings.gradle");
+
+            // switch to Kotlin DSL gradle if .kts file is detected (Fluter 3.29+ by default)
+            if (File.Exists(projBuildPath + ".kts")) {
+                SetupAndroidProjectKotlin();
+                return;
+            }
 
             var projBuildScript = File.ReadAllText(projBuildPath);
             var settingsScript = File.ReadAllText(settingsPath);
@@ -521,6 +584,71 @@ dependencies {
             }
         }
 
+
+        // Copy of SetupAndroidProject() adapted to Kotlin DLS .gradle.kts. Generated since Flutter 3.29
+        private static void SetupAndroidProjectKotlin()
+        {
+            var androidPath = Path.GetFullPath(Path.Combine(ProjectPath, "../../android"));
+            var androidAppPath = Path.GetFullPath(Path.Combine(ProjectPath, "../../android/app"));
+            var projBuildPath = Path.Combine(androidPath, "build.gradle.kts");
+            var appBuildPath = Path.Combine(androidAppPath, "build.gradle.kts");
+            var settingsPath = Path.Combine(androidPath, "settings.gradle.kts");
+
+
+            var projBuildScript = File.ReadAllText(projBuildPath);
+            var settingsScript = File.ReadAllText(settingsPath);
+            var appBuildScript = File.ReadAllText(appBuildPath);
+
+            // Sets up the project build.gradle files correctly
+            if (!Regex.IsMatch(projBuildScript, @"flatDir[^/]*[^}]*}"))
+            {
+                var regex = new Regex(@"allprojects \{[^\{]*\{", RegexOptions.Multiline);
+                projBuildScript = regex.Replace(projBuildScript, @"
+allprojects {
+    repositories {
+        flatDir {
+            dirs(file(""${project("":unityLibrary"").projectDir}/libs""))
+        }
+");
+                File.WriteAllText(projBuildPath, projBuildScript);
+            }
+
+            // Sets up the project settings.gradle files correctly
+            if (!Regex.IsMatch(settingsScript, @"include("":unityLibrary"")"))
+            {
+                settingsScript += @"
+
+include("":unityLibrary"")
+project("":unityLibrary"").projectDir = file(""./unityLibrary"")
+";
+                File.WriteAllText(settingsPath, settingsScript);
+            }
+
+
+            // Sets up the project app build.gradle files correctly
+            if (!Regex.IsMatch(appBuildScript, @"dependencies \{"))
+            {
+                appBuildScript += @"
+dependencies {
+    implementation(project("":unityLibrary""))
+}
+";
+                File.WriteAllText(appBuildPath, appBuildScript);
+            }
+            else
+            {
+                if (!appBuildScript.Contains(@"implementation(project("":unityLibrary"")"))
+                {
+                    var regex = new Regex(@"dependencies \{", RegexOptions.Multiline);
+                    appBuildScript = regex.Replace(appBuildScript, @"
+dependencies {
+    implementation(project("":unityLibrary""))
+");
+                    File.WriteAllText(appBuildPath, appBuildScript);
+                }
+            }
+        }
+
         /// <summary>
         /// This method tries to autome the build setup required for Android
         /// </summary>
@@ -529,6 +657,11 @@ dependencies {
             var androidPath = Path.GetFullPath(Path.Combine(ProjectPath, "../../android"));
             var projBuildPath = Path.Combine(androidPath, "build.gradle");
             var settingsPath = Path.Combine(androidPath, "settings.gradle");
+
+            if (File.Exists(projBuildPath + ".kts")) {
+                SetupAndroidProjectForPluginKotlin();
+                return;
+            }
 
             var projBuildScript = File.ReadAllText(projBuildPath);
             var settingsScript = File.ReadAllText(settingsPath);
@@ -551,6 +684,40 @@ dependencies {
                 settingsScript += @"
 
 include "":unityLibrary""
+project("":unityLibrary"").projectDir = file(""./unityLibrary"")
+";
+                File.WriteAllText(settingsPath, settingsScript);
+            }
+        }
+
+        // Copy of SetupAndroidProjectForPlugin() adapted to Kotlin DLS .gradle.kts. Generated since Flutter 3.29
+        private static void SetupAndroidProjectForPluginKotlin()
+        {
+            var androidPath = Path.GetFullPath(Path.Combine(ProjectPath, "../../android"));
+            var projBuildPath = Path.Combine(androidPath, "build.gradle.kts");
+            var settingsPath = Path.Combine(androidPath, "settings.gradle.kts");
+
+            var projBuildScript = File.ReadAllText(projBuildPath);
+            var settingsScript = File.ReadAllText(settingsPath);
+
+            // Sets up the project build.gradle files correctly
+            if (Regex.IsMatch(projBuildScript, @"// BUILD_ADD_UNITY_LIBS"))
+            {
+                var regex = new Regex(@"// BUILD_ADD_UNITY_LIBS", RegexOptions.Multiline);
+                projBuildScript = regex.Replace(projBuildScript, @"
+        flatDir {
+            dirs(file(""${project("":unityLibrary"").projectDir}/libs""))
+        }
+");
+                File.WriteAllText(projBuildPath, projBuildScript);
+            }
+
+            // Sets up the project settings.gradle files correctly
+            if (!Regex.IsMatch(settingsScript, @"include("":unityLibrary"")"))
+            {
+                settingsScript += @"
+
+include("":unityLibrary"")
 project("":unityLibrary"").projectDir = file(""./unityLibrary"")
 ";
                 File.WriteAllText(settingsPath, settingsScript);
@@ -621,6 +788,21 @@ project("":unityLibrary"").projectDir = file(""./unityLibrary"")
             }
 
 
+        }
+
+
+        // check if the Unity project is in the expected location
+        private static bool IsProjectLocationValid(string unityLibraryPath, string platform)
+        { 
+            // android, ios and web use platform/unityLibrary, move up one step.
+            string platformPath = Path.Combine(unityLibraryPath, "../");
+            if (!Directory.Exists(platformPath))
+            {
+                Debug.LogError($"Could not find the Flutter project {platform} folder. Make sure the Unity project folder is located in '<flutter-project>/unity/<unity-project-folder>' .");
+                Debug.Log($"-- Build: Failed --");
+                return false;
+            }
+            return true;
         }
 
         //#endregion

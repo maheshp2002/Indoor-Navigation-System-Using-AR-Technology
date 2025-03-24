@@ -179,7 +179,9 @@ class AppTheme {
       displayMedium: AppTextStyles.appBarTitle
           .copyWith(color: Colors.black87, fontWeight: FontWeight.bold),
       labelSmall: AppTextStyles.appBarTitle
-          .copyWith(color: Colors.black87, fontSize: 15),
+          .copyWith(color: Colors.black87, fontSize: 13),
+      headlineMedium:
+          AppTextStyles.bodyText.copyWith(color: Colors.black87, fontSize: 20),    
     ),
     drawerTheme: const DrawerThemeData(
       backgroundColor: AppColors.backgroundLight,
@@ -230,7 +232,9 @@ class AppTheme {
       displayMedium: AppTextStyles.appBarTitle
           .copyWith(color: Colors.white, fontWeight: FontWeight.bold),
       labelSmall:
-          AppTextStyles.appBarTitle.copyWith(color: Colors.white, fontSize: 15),
+          AppTextStyles.appBarTitle.copyWith(color: Colors.white, fontSize: 13),
+      headlineMedium:
+          AppTextStyles.bodyText.copyWith(color: Colors.black87, fontSize: 20),   
     ),
     drawerTheme: const DrawerThemeData(
       backgroundColor: AppColors.backgroundDark,

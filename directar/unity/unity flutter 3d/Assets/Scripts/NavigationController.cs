@@ -43,6 +43,9 @@ public class CameraData
     public float fieldOfView;
 }
 
+/// <summary>
+/// Controls AR navigation, managing waypoints, line rendering, and directional guidance.
+/// </summary>
 public class NavigationController : MonoBehaviour
 {
     [SerializeField] private UnityMessageSender unityMessageSender;
@@ -54,14 +57,21 @@ public class NavigationController : MonoBehaviour
     private Dictionary<string, Transform> destinationPoints = new Dictionary<string, Transform>();
     private string defaultDestination;
     private GameObject sceneRoot;
-    private string lastInstruction = "";
-    private float lastInstructionTime = 0f;
     private int currentPathIndex = 0;
-    private float instructionCooldown = 2.0f; // Prevents instructions from repeating too often
+    private string lastInstruction = "";
+    private float instructionCooldown = 5.0f; // Prevents instructions from repeating too often
     private string lastSpokenInstruction = "";
-    private int repeatCount = 0;
-    private Vector3 lastUserPosition;
+    private readonly float destinationThreshold = 2.0f; // 2 meters to trigger arrival message
+    private float minMoveDistance = 2.0f;
+    private bool shouldRecalculatePath = true;
+    private Vector3 lastUserPosition = Vector3.zero;
+    private DateTime lastInstructionTime = DateTime.MinValue;
+    public Material redMaterial;
+    public static bool isSceneLoadFinished = false;
 
+    /// <summary>
+    /// Initializes the AR scene and configures settings for Android.
+    /// </summary>
     void Start()
     {
         #if UNITY_ANDROID
@@ -73,15 +83,32 @@ public class NavigationController : MonoBehaviour
         #endif
     }
 
+    /// <summary>
+    /// Updates the navigation path when the user moves significantly.
+    /// </summary>
     void Update()
     {
-        if (xrOrigin != null && !string.IsNullOrEmpty(defaultDestination) &&
-            destinationPoints.TryGetValue(defaultDestination, out Transform target))
+        if (xrOrigin == null || string.IsNullOrEmpty(defaultDestination)) return;
+
+        if (destinationPoints.TryGetValue(defaultDestination, out Transform target))
         {
-            ShowNavigationPath(target.position);
+            Vector3 userPosition = xrOrigin.transform.position;
+            Debug.Log($"debug ar app: Current XR Origin Position: {userPosition}");
+
+            // Check if user has moved significantly
+            if (((userPosition - lastUserPosition).sqrMagnitude > minMoveDistance * minMoveDistance) || shouldRecalculatePath)
+            {
+                ShowNavigationPath(target.position);
+                lastUserPosition = userPosition;
+                shouldRecalculatePath = false;
+            }
         }
     }
 
+    /// <summary>
+    /// Imports a scene from a base64-encoded ZIP file.
+    /// </summary>
+    /// <param name="base64String">Base64 string containing the ZIP file.</param>
     public void ImportSceneFromBase64ForNavigationLine(string base64String)
     {
         try
@@ -98,6 +125,10 @@ public class NavigationController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Extracts and processes a ZIP file containing 3D models and navigation data.
+    /// </summary>
+    /// <param name="zipFilePath">Path to the ZIP file.</param>
     public void ImportScene(string zipFilePath)
     {
         string tempFolder = Path.Combine(Application.persistentDataPath, Guid.NewGuid().ToString());
@@ -144,6 +175,11 @@ public class NavigationController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Creates and sets up a navigation point in the scene.
+    /// </summary>
+    /// <param name="objData">Scene object data.</param>
+    /// <returns>The created navigation point GameObject.</returns>
     private GameObject SetupNavigationPoint(SceneObjectData objData)
     {
         GameObject navPoint;
@@ -168,6 +204,11 @@ public class NavigationController : MonoBehaviour
         return navPoint;
     }
 
+    /// <summary>
+    /// Loads and imports a 3D model from the specified folder.
+    /// </summary>
+    /// <param name="folderPath">Path to the folder containing the model.</param>
+    /// <param name="objData">Scene object data.</param>
     private void Import3DModel(string folderPath, SceneObjectData objData)
     {
         string modelPath = Path.Combine(folderPath, $"{objData.name}.obj");
@@ -209,42 +250,60 @@ public class NavigationController : MonoBehaviour
         }
     }
 
-     private void HideRenderers(List<GameObject> objects)
+    /// <summary>
+    /// Hides renderers of the provided objects to make them invisible.
+    /// </summary>
+    /// <param name="objects">List of GameObjects to hide.</param>
+    private void HideRenderers(List<GameObject> objects)
     {
+        Material transparentMaterial = CreateTransparentMaterial();
+        if (transparentMaterial == null) return;
+
         foreach (var obj in objects)
         {
             MeshRenderer[] meshRenderers = obj.GetComponentsInChildren<MeshRenderer>();
             foreach (var renderer in meshRenderers)
             {
-                // Use the Standard Shader with transparency settings
-                Shader standardShader = Shader.Find("Standard");
-                if (standardShader == null)
-                {
-                    Debug.LogError("Standard Shader not found!");
-                    continue;
-                }
-
-                Material transparentMaterial = new Material(standardShader);
-                transparentMaterial.SetFloat("_Mode", 3); // 3 = Transparent Mode
-                transparentMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                transparentMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                transparentMaterial.SetInt("_ZWrite", 0);
-                transparentMaterial.DisableKeyword("_ALPHATEST_ON");
-                transparentMaterial.EnableKeyword("_ALPHABLEND_ON");
-                transparentMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                transparentMaterial.renderQueue = 3000; // Set render queue for transparency
-
-                // Set transparency color
-                Color color = transparentMaterial.color;
-                color.a = 0f; // Fully transparent
-                transparentMaterial.color = color;
-
                 renderer.material = transparentMaterial;
             }
         }
     }
 
+    /// <summary>
+    /// Creates a transparent material to be used for rendering.
+    /// </summary>
+    /// <returns>The created transparent material.</returns>
+    private Material CreateTransparentMaterial()
+    {
+        Shader standardShader = Shader.Find("Standard");
+        if (standardShader == null)
+        {
+            Debug.LogError("Standard Shader not found!");
+            return null;
+        }
 
+        Material transparentMaterial = new Material(standardShader);
+        transparentMaterial.SetFloat("_Mode", 3); // Transparent Mode
+        transparentMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        transparentMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        transparentMaterial.SetInt("_ZWrite", 0);
+        transparentMaterial.DisableKeyword("_ALPHATEST_ON");
+        transparentMaterial.EnableKeyword("_ALPHABLEND_ON");
+        transparentMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        transparentMaterial.renderQueue = 3000; // Transparent rendering queue
+
+        Color color = transparentMaterial.color;
+        color.a = 0f; // Fully transparent
+        transparentMaterial.color = color;
+
+        return transparentMaterial;
+    }
+
+    /// <summary>
+    /// Finds all mesh objects within the given GameObject hierarchy.
+    /// </summary>
+    /// <param name="obj">Root GameObject to search.</param>
+    /// <returns>List of found mesh GameObjects.</returns>
     private List<GameObject> FindMeshObjects(GameObject obj)
     {
         List<GameObject> meshObjects = new List<GameObject>();
@@ -262,7 +321,10 @@ public class NavigationController : MonoBehaviour
         return meshObjects;
     }
 
-
+    /// <summary>
+    /// Recursively adds colliders to a GameObject and its children.
+    /// </summary>
+    /// <param name="obj">The GameObject to add colliders to.</param>
     private void AddCollidersRecursively(GameObject obj)
     {
         // Add a MeshCollider if the object has a MeshRenderer and no collider
@@ -279,23 +341,93 @@ public class NavigationController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Sets the destination for navigation and updates the path accordingly.
+    /// </summary>
+    /// <param name="targetLabel">The label of the target destination.</param>
     public void SetDestination(string targetLabel)
     {
         defaultDestination = targetLabel;
         if (destinationPoints.TryGetValue(targetLabel, out Transform target))
         {
+            shouldRecalculatePath = true;
             ShowNavigationPath(target.position);
         }
         else if (destinationPoints.TryGetValue(destinationPoints.Keys.First(), out Transform defaultTarget))
         {
+            shouldRecalculatePath = true;
             ShowNavigationPath(defaultTarget.position);
         }
         else
         {
             Debug.LogError($"Destination {targetLabel} not found.");
         }
+
+        foreach (var kvp in destinationPoints)
+        {
+            Transform destination = kvp.Value;
+            MeshRenderer[] renderers = destination.GetComponentsInChildren<MeshRenderer>();
+            foreach (var renderer in renderers)
+            {
+                if (kvp.Key == targetLabel)
+                {
+                    ResetShader(renderer);
+                }
+                else
+                {
+                    // Apply transparent shader to hide other destinations
+                    ApplyTransparentShader(renderer);
+                }
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Resets the shader of a renderer to the default red material for location pins and enable the textmesh
+    /// </summary>
+    /// <param name="renderer">The renderer to reset.</param>
+    private void ResetShader(Renderer renderer)
+    {
+        TextMeshPro tmp = renderer.GetComponent<TextMeshPro>(); 
+        // Only apply red material to non-TextMeshPro objects
+        if (tmp == null)
+        {
+            renderer.material = redMaterial;
+        }
+        else
+        {
+            // Ensure text is visible for the selected destination
+            tmp.enabled = true;
+        }
     }
 
+    /// <summary>
+    /// Applies a transparent shader to a given renderer, but ensures TextMeshPro retains its material.
+    /// </summary>
+    /// <param name="renderer">Renderer to apply transparency to.</param>
+    private void ApplyTransparentShader(Renderer renderer)
+    {
+        TextMeshPro tmp = renderer.GetComponent<TextMeshPro>();
+        // Only apply transparency to non-TextMeshPro objects
+        if (tmp == null)
+        {
+            Material transparentMaterial = CreateTransparentMaterial();
+            if (transparentMaterial != null)
+            {
+                renderer.material = transparentMaterial;
+            }
+        }
+        else
+        {
+            // Hide text for non-selected destinations
+            tmp.enabled = false;
+        }
+    }
+
+    /// <summary>
+    /// Deletes the temporary folder after the NavMesh is baked.
+    /// </summary>
+    /// <param name="folderPath">Path to the folder to delete.</param>
     private IEnumerator DeleteTempFolderAfterNavMesh(string folderPath)
     {
         yield return new WaitForSeconds(3.0f); // Wait for NavMesh baking
@@ -305,7 +437,9 @@ public class NavigationController : MonoBehaviour
         }
     }
 
-    // Bake NavMesh for all imported objects
+    /// <summary>
+    /// Bakes the NavMesh for all imported objects in the scene.
+    /// </summary>
     void BakeNavMesh()
     {
         List<NavMeshSurface> navMeshSurfaces = new List<NavMeshSurface>();
@@ -362,6 +496,9 @@ public class NavigationController : MonoBehaviour
         // VisualizeNavMesh();
     }
 
+    /// <summary>
+    /// Sets the default navigation path to the first available destination.
+    /// </summary>
     private void SetDefaultNavigationPath()
     {
         if (destinationPoints.Count > 0)
@@ -371,6 +508,10 @@ public class NavigationController : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Displays the navigation path from the user's position to the target.
+    /// </summary>
+    /// <param name="targetPosition">Target destination position.</param>
     private void ShowNavigationPath(Vector3 targetPosition)
     {
         if (xrOrigin == null) return;
@@ -398,9 +539,9 @@ public class NavigationController : MonoBehaviour
         if (NavMesh.CalculatePath(startPosition, targetPosition, NavMesh.AllAreas, path) && path.status == NavMeshPathStatus.PathComplete)
         {
             pathLine.positionCount = 0;
-            pathLine.widthMultiplier = 2.0f;
-            pathLine.startWidth = 2.0f;
-            pathLine.endWidth = 2.0f;
+            pathLine.widthMultiplier = 1.2f;
+            pathLine.startWidth = 2.5f;
+            pathLine.endWidth = 2.5f;
             pathLine.positionCount = path.corners.Length;
             currentPathIndex = 0; // Reset index for new path
             pathLine.SetPositions(path.corners);
@@ -412,23 +553,33 @@ public class NavigationController : MonoBehaviour
             Debug.LogError($"Error: Path calculation failed: No valid path. {startPosition} → {targetPosition}");
             pathLine.positionCount = 0;
         }
-    }
 
+        if (!isSceneLoadFinished) {
+            FinishSceneLoad();
+        }
+    }
+    
+    /// <summary>
+    /// Provides voice guidance for the user along the navigation path.
+    /// </summary>
+    /// <param name="path">The calculated navigation path.</param>
     private void ProvideVoiceNavigation(NavMeshPath path)
     {
+        Debug.Log($"debug ar app: Last spoken instruction: {lastSpokenInstruction}, xrOrigin.transform.position: {xrOrigin.transform.position}");
         if (path.corners.Length < 2) return;
 
         Vector3 userPosition = xrOrigin.transform.position;
+        double secondsSinceLastInstruction = (DateTime.UtcNow - lastInstructionTime).TotalSeconds;
 
-        // Prevent instruction flooding
-        if (Time.time - lastInstructionTime < instructionCooldown) return;
+        if (secondsSinceLastInstruction < instructionCooldown && userPosition == lastUserPosition)
+            return; // Ensure 5 seconds interval between instructions
 
-        if (currentPathIndex == 0) {
+        if (currentPathIndex == 0)
+        {
             GiveInitialInstruction(path);
-        } else {
-            // Ensure user moved at least 0.3 meters before next instruction
-            if (Vector3.Distance(userPosition, lastUserPosition) < 0.3f) return;
-
+        }
+        else
+        {
             if (currentPathIndex < path.corners.Length - 1)
             {
                 Vector3 current = path.corners[currentPathIndex];
@@ -436,18 +587,30 @@ public class NavigationController : MonoBehaviour
 
                 float distanceToNext = Vector3.Distance(userPosition, next);
                 float segmentLength = Vector3.Distance(current, next);
-                float threshold = Mathf.Max(segmentLength * 0.3f, 1.5f); // Min threshold of 1.5m to avoid jittery instructions
+                float threshold = Mathf.Max(segmentLength * 0.3f, 1.5f); // Dynamic threshold to avoid unnecessary instructions
 
-                if (distanceToNext < threshold) 
+                if (distanceToNext < threshold)
                 {
                     currentPathIndex++;
                     GiveNextInstruction(path);
-                    lastInstructionTime = Time.time;
                     lastUserPosition = userPosition;
                 }
             }
         }
+
+        float distanceToDestination = Vector3.Distance(userPosition, path.corners[path.corners.Length - 1]);
+
+        if (currentPathIndex >= path.corners.Length - 2 && distanceToDestination < destinationThreshold)
+        {
+            SendVoiceInstruction("You have reached the destination.");
+            Debug.Log($"debug ar app:  User reached destination. Distance: {distanceToDestination}");
+        }
     }
+
+    /// <summary>
+    /// Gives an initial voice instruction to start moving.
+    /// </summary>
+    /// <param name="path">The navigation path.</param>
     private void GiveInitialInstruction(NavMeshPath path)
     {
         if (path.corners.Length < 2) return;
@@ -457,11 +620,14 @@ public class NavigationController : MonoBehaviour
         float initialDistance = Vector3.Distance(start, next);
         string instruction = $"Start moving forward {Mathf.Round(initialDistance)} meters.";
 
-        lastInstructionTime = Time.time;
-        currentPathIndex = 1; // Ensure it starts from the second point
+        currentPathIndex = 1;
         SendVoiceInstruction(instruction);
     }
 
+    /// <summary>
+    /// Provides the next voice instruction for navigation.
+    /// </summary>
+    /// <param name="path">The navigation path.</param>
     private void GiveNextInstruction(NavMeshPath path)
     {
         if (currentPathIndex >= path.corners.Length - 1) return;
@@ -478,7 +644,7 @@ public class NavigationController : MonoBehaviour
             Vector3 nextDirection = (nextSegment - next).normalized;
             float angle = Vector3.SignedAngle(direction, nextDirection, Vector3.up);
 
-            if (Mathf.Abs(angle) > 20) // Ignore small angle deviations
+            if (Mathf.Abs(angle) > 20)
             {
                 if (angle > 30 && angle < 150) turnInstruction = "Turn right";
                 else if (angle < -30 && angle > -150) turnInstruction = "Turn left";
@@ -491,32 +657,28 @@ public class NavigationController : MonoBehaviour
             : $"Move forward {Mathf.Round(forwardDistance)} meters.";
 
         SendVoiceInstruction(finalInstruction);
-        lastInstructionTime = Time.time; // Update last instruction time
     }
 
+    /// <summary>
+    /// Sends a voice instruction to Flutter if it's different from the last spoken instruction.
+    /// </summary>
+    /// <param name="instruction">The voice instruction to be sent.</param>
     private void SendVoiceInstruction(string instruction)
     {
-        if (instruction == lastSpokenInstruction)
-        {
-            // repeatCount++;
-            // if (repeatCount > 0) // Ignore if repeated more than twice
-            // {
-            //     Debug.Log($"[Blocked] Repeating instruction ignored: {instruction}");
-                return;
-            // }
-        }
-        else
-        {
-            repeatCount = 0; // Reset if new instruction comes
-        }
+        if (instruction == lastSpokenInstruction) return;
 
-        lastSpokenInstruction = instruction; // Store last instruction
+        lastSpokenInstruction = instruction;
+        lastInstructionTime = DateTime.UtcNow; // Update last spoken time
+
+        Debug.Log($"debug ar app: Sending Voice Instruction: {instruction}, User Position: {xrOrigin.transform.position}");
 
         string jsonMessage = JsonConvert.SerializeObject(new { navigationInstructions = new List<string> { instruction } });
         unityMessageSender.SendMessageToFlutter(jsonMessage);
-        Debug.Log($"Voice Navigation: {instruction}");
     }
 
+    /// <summary>
+    /// Sends the list of destination labels to Flutter.
+    /// </summary>
     public void SendDestinationLabelsToFlutter()
     {
         // Extract all destination labels
@@ -530,6 +692,12 @@ public class NavigationController : MonoBehaviour
         unityMessageSender.SendMessageToFlutter(jsonLabels);
     }
 
+    /// <summary>
+    /// Attaches an AR anchor to a given GameObject at a specified position and rotation.
+    /// </summary>
+    /// <param name="obj">The GameObject to attach an anchor to.</param>
+    /// <param name="position">The world position where the anchor should be placed.</param>
+    /// <param name="rotation">The rotation of the anchor.</param>
     private void AttachAnchor(GameObject obj, Vector3 position, Quaternion rotation)
     {
         var anchorManager = FindObjectOfType<ARAnchorManager>();
@@ -543,12 +711,16 @@ public class NavigationController : MonoBehaviour
         if (anchor != null)
         {
             obj.transform.SetParent(anchor.transform, true);
-            Debug.Log($"Anchor attached to {obj.name} at {position}");
         }
         else
         {
             Debug.LogError("Failed to create an anchor.");
         }
+    }
+
+    private void FinishSceneLoad()
+    {
+        isSceneLoadFinished = true; // 🔹 Set flag to true after everything is loaded
     }
     
     // void VisualizeNavMesh()

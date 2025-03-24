@@ -5,124 +5,139 @@ public class FoxWalk : MonoBehaviour
 {
     public Animator animator;
     public LineRenderer pathLine;
-    public Transform xrOrigin;  // Reference to XR Origin
-    public float speed = 2.0f;
-    public float stopThreshold = 0.3f;
+    public Transform xrOrigin;
+    public float speed = 2.5f; // Increased speed slightly
+    public float stopThreshold = 0.5f;
     public float rotationSpeed = 5.0f;
-    public float startOffset = 1f; // Distance in front of XR Origin
-
-    private int currentPathIndex = 0;
+    public float startOffset = 2.0f;
+    public float followDistance = 2.0f; 
     private bool isWalking = false;
-    private bool reachedDestination = false;
+    private bool hasJumped = false;
+    private Vector3 lastXROriginPosition;
+    private float stillTime = 0f;
+    private float stillThreshold = 0.2f; // Time before switching to sit
+    private Vector3 xrDelta;
 
     void Start()
     {
-        if (animator == null)
+        if (animator == null) animator = GetComponent<Animator>();
+        if (pathLine == null) { Debug.LogError("PathLine (LineRenderer) is not assigned!"); return; }
+        if (xrOrigin == null) { Debug.LogError("XR Origin is not assigned!"); return; }
+
+        gameObject.SetActive(false); // 🔹 Disable fox until scene is fully loaded
+
+        StartCoroutine(WaitForNavigationLoad());
+    }
+
+    private IEnumerator WaitForNavigationLoad()
+    {
+        while (!NavigationController.isSceneLoadFinished) // Wait until navigation data is fully loaded
         {
-            animator = GetComponent<Animator>();
+            yield return null;
         }
 
-        if (pathLine == null)
-        {
-            Debug.LogError("PathLine (LineRenderer) is not assigned!");
-            return;
-        }
+        InitializeFox();
+    }
 
-        if (xrOrigin == null)
-        {
-            Debug.LogError("XR Origin is not assigned!");
-            return;
-        }
-
-        // **Scale Fix**: Reduce the size of the fox
-        transform.localScale = Vector3.one * 0.5f;  // Adjust scale (change if needed)
-
-        // **Position Fix**: Place the fox in front of XR Origin
+    private void InitializeFox()
+    {
+        gameObject.SetActive(true); // Enable fox after loading
         Vector3 startPosition = xrOrigin.position + (xrOrigin.forward * startOffset);
-        startPosition.y = 0; // Ensure the fox starts at ground level
+        startPosition.y = xrOrigin.position.y;
         transform.position = startPosition;
 
-        // **Rotation Fix**: Face the first point in the path
-        if (pathLine.positionCount > 0)
-        {
-            Vector3 firstTarget = pathLine.GetPosition(0);
-            firstTarget.y = transform.position.y; // Keep fox at ground level
-            transform.rotation = Quaternion.LookRotation(firstTarget - transform.position);
-        }
-
-        // Start sitting
-        animator.SetTrigger("Sit");
+        lastXROriginPosition = xrOrigin.position;
+        StartFoxWalking();
     }
 
     void Update()
     {
-        if (pathLine.positionCount == 0 || reachedDestination) return;
+        if (pathLine.positionCount == 0) return;
 
-        Vector3 targetPosition = pathLine.GetPosition(currentPathIndex);
-        targetPosition.y = transform.position.y; // Keep fox at ground level
+        xrDelta = xrOrigin.position - lastXROriginPosition;
+        lastXROriginPosition = xrOrigin.position;
 
-        float distance = Vector3.Distance(transform.position, targetPosition);
+        Vector3 targetPosition = xrOrigin.position + (xrOrigin.forward * followDistance);
 
-        if (distance < stopThreshold)
+        // Check if Fox reached the last point in the path
+        if (Vector3.Distance(transform.position, pathLine.GetPosition(pathLine.positionCount - 1)) < stopThreshold)
         {
-            currentPathIndex++;
-
-            if (currentPathIndex >= pathLine.positionCount)
+            if (!hasJumped)
             {
-                reachedDestination = true;
-                isWalking = false;
-                animator.SetTrigger("Sit"); // Sit at the destination
-                return;
+                PlayJumpAnimation();
+                hasJumped = true;
             }
-
-            targetPosition = pathLine.GetPosition(currentPathIndex);
-            targetPosition.y = transform.position.y;
+            return;
         }
 
-        MoveTowardsTarget(targetPosition);
+        // Check movement
+        if (xrDelta.magnitude > 0f) // Even the smallest movement should trigger walk
+        {
+            stillTime = 0f; // Reset still timer
+            StartFoxWalking();
+            MoveTowardsTarget(targetPosition);
+        }
+        else
+        {
+            stillTime += Time.deltaTime;
+            if (stillTime >= stillThreshold) // Sit only after a small delay
+            {
+                StopFox();
+            }
+        }
     }
 
     private void MoveTowardsTarget(Vector3 target)
     {
+        float dynamicDistance = Mathf.Lerp(5f, 10f, xrDelta.magnitude * 5f);
+        Vector3 adjustedTarget = xrOrigin.position + (xrOrigin.forward * dynamicDistance) + (xrOrigin.right * 2f);
+
+        // 🔹 Use Raycasting to find ground level
+        RaycastHit hit;
+        if (Physics.Raycast(adjustedTarget + Vector3.up * 2f, Vector3.down, out hit, 5f))
+        {
+            adjustedTarget.y = hit.point.y; // Snap fox to the detected ground
+        }
+        else
+        {
+            adjustedTarget.y = xrOrigin.position.y; // Default fallback
+        }
+
+        transform.position = Vector3.Lerp(transform.position, adjustedTarget, speed * Time.deltaTime);
+
+        Vector3 direction = (adjustedTarget - transform.position).normalized;
+        if (direction != Vector3.zero)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+        }
+    }
+
+    private void StartFoxWalking()
+    {
         if (!isWalking)
         {
             isWalking = true;
-            animator.SetTrigger("Stand"); // Stand up first
-            StartCoroutine(StartWalkingAfterDelay(0.5f));
+            animator.ResetTrigger("Fox sit");
+            animator.ResetTrigger("Fox jump");
+            animator.SetTrigger("Fox walk");
         }
-
-        Vector3 direction = (target - transform.position).normalized;
-        transform.position += direction * speed * Time.deltaTime;
-
-        // Rotate smoothly towards movement direction
-        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction), rotationSpeed * Time.deltaTime);
     }
 
-    private IEnumerator StartWalkingAfterDelay(float delay)
+    private void StopFox()
     {
-        yield return new WaitForSeconds(delay);
-        animator.SetTrigger("Walk");
-    }
-
-    public void StopFox()
-    {
-        isWalking = false;
-        animator.SetTrigger("Sit"); // Sit when stopped
-    }
-
-    public void RestartPath()
-    {
-        currentPathIndex = 0;
-        reachedDestination = false;
-        isWalking = false;
-        animator.SetTrigger("Sit");
-
-        // Face the first target point again when restarting
-        if (pathLine.positionCount > 0)
+        if (isWalking)
         {
-            Vector3 firstTarget = pathLine.GetPosition(0);
-            firstTarget.y = transform.position.y;
-            transform.rotation = Quaternion.LookRotation(firstTarget - transform.position);
+            isWalking = false;
+            animator.ResetTrigger("Fox walk");
+            animator.SetTrigger("Fox sit");
         }
+    }
+
+    private void PlayJumpAnimation()
+    {
+        animator.ResetTrigger("Fox walk");
+        animator.ResetTrigger("Fox sit");
+        animator.SetTrigger("Fox jump");
     }
 }

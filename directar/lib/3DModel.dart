@@ -83,7 +83,6 @@ class ThreeDModelState extends State<ThreeDModel> {
       }
 
       final zipData = ZipEncoder().encode(archive);
-      if (zipData == null) return;
 
       final directory = await getApplicationDocumentsDirectory();
       final zipFilePath = '${directory.path}/images.zip';

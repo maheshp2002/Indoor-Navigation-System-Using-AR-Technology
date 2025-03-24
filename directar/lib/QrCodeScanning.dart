@@ -66,7 +66,7 @@ class QRCodeScanningState extends State<QRCodeScanning> {
   }
 
   Future<void> _loadInitialSceneFromUrl(String mapsUrl) async {
-      Navigator.push(
+      Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => UserNavigation(mapsUrl: mapsUrl)),
       );

@@ -6,7 +6,6 @@ import 'components/themeManager.dart';
 import 'services/defaultFirebaseOption.dart';
 import 'splashScreen.dart';
 import 'theme.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
