@@ -59,15 +59,24 @@ public class NavigationController : MonoBehaviour
     private GameObject sceneRoot;
     private int currentPathIndex = 0;
     private string lastInstruction = "";
-    private float instructionCooldown = 5.0f; // Prevents instructions from repeating too often
+    private float instructionCooldown = 3.0f; // Prevents instructions from repeating too often
     private string lastSpokenInstruction = "";
-    private readonly float destinationThreshold = 2.0f; // 2 meters to trigger arrival message
-    private float minMoveDistance = 2.0f;
+    private readonly float destinationThreshold = 1.3f;
+    private float minMoveDistance = 0.1f;
     private bool shouldRecalculatePath = true;
     private Vector3 lastUserPosition = Vector3.zero;
     private DateTime lastInstructionTime = DateTime.MinValue;
     public Material redMaterial;
-    public static bool isSceneLoadFinished = false;
+    private Vector3 userPosition;
+    [SerializeField] private ARAnchorManager anchorManager;
+    private Vector3[] lastValidPathCorners;
+    private bool hasSpokenInitialInstruction = false;
+    private bool hasReachedDestination = false;
+    private float stopDuration = 1f;
+    private Vector3 lastCheckedPositionXZ;
+    private float lastCheckedTime;
+    private float userStopThreshold = 0.05f;
+    public GameObject fox;
 
     /// <summary>
     /// Initializes the AR scene and configures settings for Android.
@@ -89,14 +98,20 @@ public class NavigationController : MonoBehaviour
     void Update()
     {
         if (xrOrigin == null || string.IsNullOrEmpty(defaultDestination)) return;
+        
+        // Get the AR Camera
+        Camera mainCamera = Camera.main; 
+
+        // Use the camera's position
+        userPosition = mainCamera.transform.position;
 
         if (destinationPoints.TryGetValue(defaultDestination, out Transform target))
         {
-            Vector3 userPosition = xrOrigin.transform.position;
-            Debug.Log($"debug ar app: Current XR Origin Position: {userPosition}");
-
-            // Check if user has moved significantly
-            if (((userPosition - lastUserPosition).sqrMagnitude > minMoveDistance * minMoveDistance) || shouldRecalculatePath)
+            if (((userPosition - lastUserPosition).sqrMagnitude > minMoveDistance * minMoveDistance) 
+                || shouldRecalculatePath 
+                || (currentPathIndex < lastValidPathCorners.Length - 2 
+                    && Vector3.Angle(lastValidPathCorners[currentPathIndex] - userPosition, 
+                                    lastValidPathCorners[currentPathIndex + 1] - lastValidPathCorners[currentPathIndex]) > 20))
             {
                 ShowNavigationPath(target.position);
                 lastUserPosition = userPosition;
@@ -144,13 +159,16 @@ public class NavigationController : MonoBehaviour
             string json = File.ReadAllText(jsonPath);
             SceneData sceneData = JsonUtility.FromJson<SceneData>(json);
 
+            Vector3 sceneStartPosition = Vector3.zero;
+            Quaternion sceneStartRotation = Quaternion.identity;
+
             foreach (var objData in sceneData.objects)
             {
                 if (objData.type == "NavigationLine" && objData.isSource == true)
                 {
+                    sceneStartPosition = objData.position;
+                    sceneStartRotation = objData.rotation;
                     SetupNavigationPoint(objData);
-                    xrOrigin.transform.position = objData.position;
-                    xrOrigin.transform.rotation = objData.rotation;
                     xrOrigin.SetActive(true);
                 } else if (objData.type == "NavigationLine" && objData.isDestination == true)
                 {
@@ -164,16 +182,41 @@ public class NavigationController : MonoBehaviour
             }
 
             SendDestinationLabelsToFlutter();   
+            // 🟢 Fix: Call AdjustScenePosition with scene start data
+            AdjustScenePosition(sceneStartPosition, sceneStartRotation);
+
             // Bake after a short delay to ensure all objects are included
             Invoke(nameof(BakeNavMesh), 2.0f);
             // Delete temp folder after baking NavMesh
             StartCoroutine(DeleteTempFolderAfterNavMesh(tempFolder));
+            Debug.Log("debug log: Fox called");
+            fox.SetActive(true); 
         }
         catch (Exception ex)
         {
             Debug.LogError($"Error importing scene: {ex.Message}");
         }
     }
+
+    private void AdjustScenePosition(Vector3 sceneStartPosition, Quaternion sceneStartRotation)
+    {
+        // Get the XR Origin's REAL-WORLD starting position (from AR tracking)
+        Vector3 xrOriginStartPosition = xrOrigin.transform.position;
+        Quaternion xrOriginStartRotation = xrOrigin.transform.rotation;
+
+        // Calculate offset between AR camera and source prefab's admin position
+        Vector3 positionOffset = xrOriginStartPosition - sceneStartPosition;
+        Quaternion rotationOffset = Quaternion.Inverse(sceneStartRotation) * xrOriginStartRotation;
+
+        // Apply offset to all scene objects (models, destinations, etc.)
+        foreach (Transform obj in sceneRoot.transform)
+        {
+            obj.position += positionOffset;
+            obj.rotation = rotationOffset * obj.rotation;
+        }
+    }
+
+
 
     /// <summary>
     /// Creates and sets up a navigation point in the scene.
@@ -348,14 +391,21 @@ public class NavigationController : MonoBehaviour
     public void SetDestination(string targetLabel)
     {
         defaultDestination = targetLabel;
+        currentPathIndex = 0;
+        lastSpokenInstruction = "";
+        lastInstructionTime = DateTime.UtcNow;
+        hasSpokenInitialInstruction = false;
+        hasReachedDestination = false;
+        lastValidPathCorners = null;
+        pathLine.positionCount = 0;
+        shouldRecalculatePath = true;
+
         if (destinationPoints.TryGetValue(targetLabel, out Transform target))
         {
-            shouldRecalculatePath = true;
             ShowNavigationPath(target.position);
         }
         else if (destinationPoints.TryGetValue(destinationPoints.Keys.First(), out Transform defaultTarget))
         {
-            shouldRecalculatePath = true;
             ShowNavigationPath(defaultTarget.position);
         }
         else
@@ -481,9 +531,9 @@ public class NavigationController : MonoBehaviour
             // Step Height & Slope from the image
             surface.defaultArea = 0; // Default walkable area
             NavMeshBuildSettings settings = NavMesh.GetSettingsByID(surface.agentTypeID);
-            settings.agentRadius = 1.15f;
-            settings.agentHeight = 1.09f;
-            settings.agentSlope = 45f;
+            settings.agentRadius = 1f;
+            settings.agentHeight = 1f;
+            settings.agentSlope = 20f;
             settings.agentClimb = 1f; // Step height from the image
 
             surface.BuildNavMesh();
@@ -517,45 +567,54 @@ public class NavigationController : MonoBehaviour
         if (xrOrigin == null) return;
 
         NavMeshPath path = new NavMeshPath();
-        Vector3 startPosition = xrOrigin.transform.position; // Use XR Origin position as the player position
+        Vector3 startPosition = Camera.main.transform.position; // Use AR Camera position
 
         // Ensure target position is on the NavMesh
-        if (!NavMesh.SamplePosition(targetPosition, out NavMeshHit hit, 5.0f, NavMesh.AllAreas))
+        if (!NavMesh.SamplePosition(targetPosition, out NavMeshHit hit, 10.0f, NavMesh.AllAreas))
         {
             Debug.LogError($"Error: Target position {targetPosition} is NOT on the NavMesh. Finding nearest valid point...");
         }
-        
-        targetPosition = hit.position;  // Adjusted valid NavMesh position
 
-        // Ensure player (xrOrigin) position is also on the NavMesh
+        // Adjusted valid NavMesh position
+        targetPosition = hit.position;  
+
+        // Ensure player (mainCamera) position is also on the NavMesh
         if (!NavMesh.SamplePosition(startPosition, out NavMeshHit startHit, 5.0f, NavMesh.AllAreas))
         {
             Debug.LogError($"Error: XR Origin position {startPosition} is NOT on the NavMesh.");
         }
 
-        startPosition = startHit.position; // Adjusted valid start position
+        // Adjusted valid start position
+        startPosition = startHit.position;
+        bool pathValid = NavMesh.CalculatePath(startPosition, targetPosition, NavMesh.AllAreas, path);
 
         // Calculate path
-        if (NavMesh.CalculatePath(startPosition, targetPosition, NavMesh.AllAreas, path) && path.status == NavMeshPathStatus.PathComplete)
+        if (pathValid && path.status == NavMeshPathStatus.PathComplete)
         {
+            lastValidPathCorners = path.corners;
             pathLine.positionCount = 0;
             pathLine.widthMultiplier = 1.2f;
             pathLine.startWidth = 2.5f;
             pathLine.endWidth = 2.5f;
             pathLine.positionCount = path.corners.Length;
-            currentPathIndex = 0; // Reset index for new path
             pathLine.SetPositions(path.corners);
 
             ProvideVoiceNavigation(path);
         } 
         else
         {
-            Debug.LogError($"Error: Path calculation failed: No valid path. {startPosition} → {targetPosition}");
-            pathLine.positionCount = 0;
-        }
+            SendVoiceInstruction($"Path calculation failed. Using last valid path.");
 
-        if (!isSceneLoadFinished) {
-            FinishSceneLoad();
+            // Show last valid path if it exists
+            if (lastValidPathCorners != null && lastValidPathCorners.Length > 0)
+            {
+                pathLine.positionCount = lastValidPathCorners.Length;
+                pathLine.SetPositions(lastValidPathCorners);
+            }
+            else
+            {
+                pathLine.positionCount = 0;
+            }
         }
     }
     
@@ -565,46 +624,148 @@ public class NavigationController : MonoBehaviour
     /// <param name="path">The calculated navigation path.</param>
     private void ProvideVoiceNavigation(NavMeshPath path)
     {
-        Debug.Log($"debug ar app: Last spoken instruction: {lastSpokenInstruction}, xrOrigin.transform.position: {xrOrigin.transform.position}");
-        if (path.corners.Length < 2) return;
+        if (path.corners.Length < 2 || hasReachedDestination) return; // Ensure path has enough points
 
-        Vector3 userPosition = xrOrigin.transform.position;
+        Vector3 userPosition = Camera.main.transform.position;
         double secondsSinceLastInstruction = (DateTime.UtcNow - lastInstructionTime).TotalSeconds;
 
-        if (secondsSinceLastInstruction < instructionCooldown && userPosition == lastUserPosition)
-            return; // Ensure 5 seconds interval between instructions
-
-        if (currentPathIndex == 0)
+        // **Check if the user reached the destination**
+        if (UserReachedDestination(userPosition, path))
         {
-            GiveInitialInstruction(path);
+            Debug.Log("debug log: User has reached the destination.");
+            currentPathIndex = 0;  // Reset the index
+            hasReachedDestination = true;
+            return;
         }
-        else
+
+        if (currentPathIndex >= path.corners.Length - 1)
         {
-            if (currentPathIndex < path.corners.Length - 1)
+            Debug.Log("debug log: Reached the last path point, no further navigation needed.");
+            return;
+        }
+
+        Vector3 current = path.corners[currentPathIndex];
+
+        if (currentPathIndex + 1 < path.corners.Length)
+        {
+            Vector3 next = path.corners[currentPathIndex + 1];
+
+            Debug.Log($"debug log: User position: {userPosition}, Last instruction time: {lastInstructionTime}, Seconds since last instruction: {secondsSinceLastInstruction}, currentPathIndex {currentPathIndex}, path.corners.Length: {path.corners.Length}");
+
+            if (UserNeedsToRotate(userPosition, next))
             {
-                Vector3 current = path.corners[currentPathIndex];
-                Vector3 next = path.corners[currentPathIndex + 1];
+                SendVoiceInstruction("Rotate 180 degrees and then move forward.");
+                return;
+            }
 
-                float distanceToNext = Vector3.Distance(userPosition, next);
-                float segmentLength = Vector3.Distance(current, next);
-                float threshold = Mathf.Max(segmentLength * 0.3f, 1.5f); // Dynamic threshold to avoid unnecessary instructions
+            if (secondsSinceLastInstruction < instructionCooldown && Vector3.Distance(userPosition, lastUserPosition) < 0.1f)
+            {
+                Debug.Log("debug log: Skipping instruction - Cooldown active or user position unchanged.");
+                return;
+            }
 
-                if (distanceToNext < threshold)
+            if (currentPathIndex == 0)
+            {
+                Debug.Log("debug log: Calling GiveInitialInstruction.");
+                GiveInitialInstruction(path);
+            }
+            else
+            {
+                if (ShouldMoveToNextPoint( secondsSinceLastInstruction))
                 {
+                    Debug.Log("debug log: Moving to next path index and calling GiveNextInstruction.");
                     currentPathIndex++;
                     GiveNextInstruction(path);
                     lastUserPosition = userPosition;
                 }
             }
+
+            if (currentPathIndex < path.corners.Length - 2)
+            {
+                string turnInstruction = CalculateTurnInstruction(current, next, path.corners[currentPathIndex + 2]);
+                if (!string.IsNullOrEmpty(turnInstruction) && lastInstruction != turnInstruction)
+                {
+                    SendVoiceInstruction(turnInstruction);
+                    return;
+                }
+            }
         }
+    }
 
-        float distanceToDestination = Vector3.Distance(userPosition, path.corners[path.corners.Length - 1]);
+    /// <summary>
+    /// Determines whether a turn instruction should be given based on the path's direction change.
+    /// </summary>
+    private string CalculateTurnInstruction(Vector3 current, Vector3 next, Vector3 nextSegment)
+    {
+        Vector3 direction = (next - current).normalized;
+        Vector3 nextDirection = (nextSegment - next).normalized;
+        float angle = Vector3.SignedAngle(direction, nextDirection, Vector3.up);
 
-        if (currentPathIndex >= path.corners.Length - 2 && distanceToDestination < destinationThreshold)
+        Debug.Log($"debug log: Turn calculation - angle: {angle}, direction: {direction}, nextDirection: {nextDirection}");
+
+        if (Mathf.Abs(angle) > 20) // Detect turn
         {
-            SendVoiceInstruction("You have reached the destination.");
-            Debug.Log($"debug ar app:  User reached destination. Distance: {distanceToDestination}");
+            if (angle > 20) return "Turn left";
+            if (angle < -20) return "Turn right";
+            if (Mathf.Abs(angle) >= 150) return "Take a U-turn";
         }
+        return null;
+    }
+
+    /// <summary>
+    /// Checks if the user should move to the next path index based on distance and time.
+    /// </summary>
+    private bool ShouldMoveToNextPoint(double secondsSinceLastInstruction)
+    {
+        return secondsSinceLastInstruction >= instructionCooldown;
+    }
+
+    /// <summary>
+    /// Checks if the user has reached the destination.
+    /// </summary>
+    private bool UserReachedDestination(Vector3 userPosition, NavMeshPath path)
+    {
+        // Ensure there's a valid path
+        if (path.corners.Length < 2) return false; 
+
+        int lastIndex = path.corners.Length - 1;
+        Vector3 userXZ = new Vector3(userPosition.x, 0, userPosition.z);
+        Vector3 finalXZ = new Vector3(path.corners[lastIndex].x, 0, path.corners[lastIndex].z);
+
+        float distanceToFinal = Vector3.Distance(userXZ, finalXZ);
+        float nearThreshold = destinationThreshold / 2;
+
+        Debug.Log($"debug log: Path Corners: {path.corners.Length}");
+        Debug.Log($"debug log: Final Corner XZ: {finalXZ}");
+        Debug.Log($"debug log: User XZ: {userXZ}");
+        Debug.Log($"debug log: Checking destination reach - Distance {distanceToFinal}, Threshold {destinationThreshold}");
+
+        if (distanceToFinal < nearThreshold)
+        {
+            Debug.Log("debug log: User has reached the destination.");
+            SendVoiceInstruction($"You have arrived at your destination {defaultDestination}");
+            return true;
+        }
+        else if (distanceToFinal < destinationThreshold) // If close but not inside threshold
+        {
+            Debug.Log($"debug log: Almost there! {distanceToFinal:F1} meters remaining.");
+            SendVoiceInstruction($"Your destination {defaultDestination} is about {distanceToFinal:F1} meters ahead.");
+        }
+
+        return false;
+    }
+
+
+    /// <summary>
+    /// Determines whether the user needs to rotate before proceeding.
+    /// </summary>
+    private bool UserNeedsToRotate(Vector3 userPosition, Vector3 next)
+    {
+        Vector3 userDirection = Camera.main.transform.forward.normalized;
+        Vector3 directionToNext = (next - userPosition).normalized;
+        float dotProduct = Vector3.Dot(userDirection, directionToNext);
+        
+        return dotProduct < -0.3f;
     }
 
     /// <summary>
@@ -613,15 +774,18 @@ public class NavigationController : MonoBehaviour
     /// <param name="path">The navigation path.</param>
     private void GiveInitialInstruction(NavMeshPath path)
     {
-        if (path.corners.Length < 2) return;
+        if (path.corners.Length < 2 || hasSpokenInitialInstruction) return;
 
         Vector3 start = path.corners[0];
         Vector3 next = path.corners[1];
         float initialDistance = Vector3.Distance(start, next);
         string instruction = $"Start moving forward {Mathf.Round(initialDistance)} meters.";
 
+        Debug.Log($"debug log: Initial instruction: {instruction}, Distance: {initialDistance}");
+
         currentPathIndex = 1;
         SendVoiceInstruction(instruction);
+        hasSpokenInitialInstruction = true;
     }
 
     /// <summary>
@@ -634,29 +798,11 @@ public class NavigationController : MonoBehaviour
 
         Vector3 current = path.corners[currentPathIndex];
         Vector3 next = path.corners[currentPathIndex + 1];
-        float forwardDistance = Vector3.Distance(current, next);
-        string turnInstruction = null;
 
-        if (currentPathIndex < path.corners.Length - 2)
-        {
-            Vector3 nextSegment = path.corners[currentPathIndex + 2];
-            Vector3 direction = (next - current).normalized;
-            Vector3 nextDirection = (nextSegment - next).normalized;
-            float angle = Vector3.SignedAngle(direction, nextDirection, Vector3.up);
+        float distance = Vector3.Distance(current, next);
+        SendVoiceInstruction($"Move forward {Mathf.Round(distance)} meters.");
 
-            if (Mathf.Abs(angle) > 20)
-            {
-                if (angle > 30 && angle < 150) turnInstruction = "Turn right";
-                else if (angle < -30 && angle > -150) turnInstruction = "Turn left";
-                else if (Mathf.Abs(angle) >= 150) turnInstruction = "Take a U-turn";
-            }
-        }
-
-        string finalInstruction = turnInstruction != null
-            ? $"{turnInstruction} and move forward {Mathf.Round(forwardDistance)} meters."
-            : $"Move forward {Mathf.Round(forwardDistance)} meters.";
-
-        SendVoiceInstruction(finalInstruction);
+        currentPathIndex++;
     }
 
     /// <summary>
@@ -665,12 +811,16 @@ public class NavigationController : MonoBehaviour
     /// <param name="instruction">The voice instruction to be sent.</param>
     private void SendVoiceInstruction(string instruction)
     {
-        if (instruction == lastSpokenInstruction) return;
+        if (instruction == lastSpokenInstruction)
+        {
+            Debug.Log("debug log: Skipping instruction - Same as last spoken.");
+            return;
+        }
+
+        Debug.Log($"debug log: Sending voice instruction: {instruction}");
 
         lastSpokenInstruction = instruction;
         lastInstructionTime = DateTime.UtcNow; // Update last spoken time
-
-        Debug.Log($"debug ar app: Sending Voice Instruction: {instruction}, User Position: {xrOrigin.transform.position}");
 
         string jsonMessage = JsonConvert.SerializeObject(new { navigationInstructions = new List<string> { instruction } });
         unityMessageSender.SendMessageToFlutter(jsonMessage);
@@ -700,10 +850,9 @@ public class NavigationController : MonoBehaviour
     /// <param name="rotation">The rotation of the anchor.</param>
     private void AttachAnchor(GameObject obj, Vector3 position, Quaternion rotation)
     {
-        var anchorManager = FindObjectOfType<ARAnchorManager>();
         if (anchorManager == null)
         {
-            Debug.LogError("ARAnchorManager not found in the scene.");
+            Debug.LogError("ARAnchorManager not assigned!");
             return;
         }
 
@@ -713,16 +862,11 @@ public class NavigationController : MonoBehaviour
             obj.transform.SetParent(anchor.transform, true);
         }
         else
-        {
+        { 
             Debug.LogError("Failed to create an anchor.");
         }
     }
 
-    private void FinishSceneLoad()
-    {
-        isSceneLoadFinished = true; // 🔹 Set flag to true after everything is loaded
-    }
-    
     // void VisualizeNavMesh()
     // {
     //     Mesh navMesh = new Mesh();

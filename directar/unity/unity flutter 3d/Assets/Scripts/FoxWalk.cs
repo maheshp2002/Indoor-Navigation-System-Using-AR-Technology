@@ -6,47 +6,39 @@ public class FoxWalk : MonoBehaviour
     public Animator animator;
     public LineRenderer pathLine;
     public Transform xrOrigin;
+    private Camera arCamera;
     public float speed = 2.5f; // Increased speed slightly
     public float stopThreshold = 0.5f;
     public float rotationSpeed = 5.0f;
-    public float startOffset = 2.0f;
+    public float startOffset = 1.0f;
     public float followDistance = 2.0f; 
     private bool isWalking = false;
     private bool hasJumped = false;
-    private Vector3 lastXROriginPosition;
+    private Vector3 lastCameraPosition;
     private float stillTime = 0f;
     private float stillThreshold = 0.2f; // Time before switching to sit
     private Vector3 xrDelta;
 
     void Start()
     {
-        if (animator == null) animator = GetComponent<Animator>();
-        if (pathLine == null) { Debug.LogError("PathLine (LineRenderer) is not assigned!"); return; }
-        if (xrOrigin == null) { Debug.LogError("XR Origin is not assigned!"); return; }
+        Debug.Log("debug log: Fox enabled! Positioning...");
 
-        gameObject.SetActive(false); // 🔹 Disable fox until scene is fully loaded
+        arCamera = xrOrigin.GetComponentInChildren<Camera>();
 
-        StartCoroutine(WaitForNavigationLoad());
-    }
+        // Position fox after being enabled
+        Vector3 startPosition = arCamera.transform.position + (arCamera.transform.forward * startOffset);
+        startPosition.y = arCamera.transform.position.y + 0.5f;
 
-    private IEnumerator WaitForNavigationLoad()
-    {
-        while (!NavigationController.isSceneLoadFinished) // Wait until navigation data is fully loaded
+        // Ensure fox is above ground
+        if (Physics.Raycast(startPosition + Vector3.up * 2f, Vector3.down, out RaycastHit hit, 5f))
         {
-            yield return null;
+            startPosition.y = hit.point.y + 0.1f; // Adjust to be slightly above ground
         }
 
-        InitializeFox();
-    }
-
-    private void InitializeFox()
-    {
-        gameObject.SetActive(true); // Enable fox after loading
-        Vector3 startPosition = xrOrigin.position + (xrOrigin.forward * startOffset);
-        startPosition.y = xrOrigin.position.y;
         transform.position = startPosition;
+        Debug.Log($"debug log: Fox enabled! Positioning... {startPosition}, {startPosition.y}, {transform.position}");
 
-        lastXROriginPosition = xrOrigin.position;
+        lastCameraPosition = arCamera.transform.position;
         StartFoxWalking();
     }
 
@@ -54,10 +46,10 @@ public class FoxWalk : MonoBehaviour
     {
         if (pathLine.positionCount == 0) return;
 
-        xrDelta = xrOrigin.position - lastXROriginPosition;
-        lastXROriginPosition = xrOrigin.position;
+        xrDelta = arCamera.transform.position - lastCameraPosition;
+        lastCameraPosition = arCamera.transform.position;
 
-        Vector3 targetPosition = xrOrigin.position + (xrOrigin.forward * followDistance);
+        Vector3 targetPosition = arCamera.transform.position + (arCamera.transform.forward * followDistance);
 
         // Check if Fox reached the last point in the path
         if (Vector3.Distance(transform.position, pathLine.GetPosition(pathLine.positionCount - 1)) < stopThreshold)
@@ -90,7 +82,7 @@ public class FoxWalk : MonoBehaviour
     private void MoveTowardsTarget(Vector3 target)
     {
         float dynamicDistance = Mathf.Lerp(5f, 10f, xrDelta.magnitude * 5f);
-        Vector3 adjustedTarget = xrOrigin.position + (xrOrigin.forward * dynamicDistance) + (xrOrigin.right * 2f);
+        Vector3 adjustedTarget = arCamera.transform.position + (arCamera.transform.forward * dynamicDistance) + (arCamera.transform.right * 2f);
 
         // 🔹 Use Raycasting to find ground level
         RaycastHit hit;
@@ -100,7 +92,7 @@ public class FoxWalk : MonoBehaviour
         }
         else
         {
-            adjustedTarget.y = xrOrigin.position.y; // Default fallback
+            adjustedTarget.y = arCamera.transform.position.y; // Default fallback
         }
 
         transform.position = Vector3.Lerp(transform.position, adjustedTarget, speed * Time.deltaTime);
