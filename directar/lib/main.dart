@@ -9,7 +9,7 @@ import 'theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    // name: "db",
+    name: "db",
     options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     ChangeNotifierProvider(

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 950922772348243386}
   - component: {fileID: 3793890191377717839}
   - component: {fileID: 3034340209868059900}
+  - component: {fileID: -3104755424951250054}
   m_Layer: 3
   m_Name: TagetObject
   m_TagString: Untagged
@@ -107,6 +108,18 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -2432090755550338912, guid: ef05b80f3f8ec2a4c9d2f559754fceb2, type: 3}
+--- !u!114 &-3104755424951250054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 817901379919154142}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b300a9cf5e1d31043aaa43aa9c8edd9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2314970346612941098
 GameObject:
   m_ObjectHideFlags: 0

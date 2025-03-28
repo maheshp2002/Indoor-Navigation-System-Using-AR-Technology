@@ -182,14 +182,12 @@ public class NavigationController : MonoBehaviour
             }
 
             SendDestinationLabelsToFlutter();   
-            // 🟢 Fix: Call AdjustScenePosition with scene start data
             AdjustScenePosition(sceneStartPosition, sceneStartRotation);
 
             // Bake after a short delay to ensure all objects are included
             Invoke(nameof(BakeNavMesh), 2.0f);
             // Delete temp folder after baking NavMesh
             StartCoroutine(DeleteTempFolderAfterNavMesh(tempFolder));
-            Debug.Log("debug log: Fox called");
             fox.SetActive(true); 
         }
         catch (Exception ex)
@@ -248,6 +246,31 @@ public class NavigationController : MonoBehaviour
     }
 
     /// <summary>
+    /// Attaches an AR anchor to a given GameObject at a specified position and rotation.
+    /// </summary>
+    /// <param name="obj">The GameObject to attach an anchor to.</param>
+    /// <param name="position">The world position where the anchor should be placed.</param>
+    /// <param name="rotation">The rotation of the anchor.</param>
+    private void AttachAnchor(GameObject obj, Vector3 position, Quaternion rotation)
+    {
+        if (anchorManager == null)
+        {
+            Debug.LogError("ARAnchorManager not assigned!");
+            return;
+        }
+
+        ARAnchor anchor = anchorManager.AddAnchor(new Pose(position, rotation));
+        if (anchor != null)
+        {
+            obj.transform.SetParent(anchor.transform, true);
+        }
+        else
+        { 
+            Debug.LogError("Failed to create an anchor.");
+        }
+    }
+
+    /// <summary>
     /// Loads and imports a 3D model from the specified folder.
     /// </summary>
     /// <param name="folderPath">Path to the folder containing the model.</param>
@@ -268,7 +291,7 @@ public class NavigationController : MonoBehaviour
 
         if (meshObjects.Count == 0)
         {
-            Debug.LogError($"No mesh found in model {objData.name}");
+            Debug.LogError($"Error: No mesh found in model {objData.name}");
             return;
         }
 
@@ -313,36 +336,6 @@ public class NavigationController : MonoBehaviour
     }
 
     /// <summary>
-    /// Creates a transparent material to be used for rendering.
-    /// </summary>
-    /// <returns>The created transparent material.</returns>
-    private Material CreateTransparentMaterial()
-    {
-        Shader standardShader = Shader.Find("Standard");
-        if (standardShader == null)
-        {
-            Debug.LogError("Standard Shader not found!");
-            return null;
-        }
-
-        Material transparentMaterial = new Material(standardShader);
-        transparentMaterial.SetFloat("_Mode", 3); // Transparent Mode
-        transparentMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        transparentMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        transparentMaterial.SetInt("_ZWrite", 0);
-        transparentMaterial.DisableKeyword("_ALPHATEST_ON");
-        transparentMaterial.EnableKeyword("_ALPHABLEND_ON");
-        transparentMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        transparentMaterial.renderQueue = 3000; // Transparent rendering queue
-
-        Color color = transparentMaterial.color;
-        color.a = 0f; // Fully transparent
-        transparentMaterial.color = color;
-
-        return transparentMaterial;
-    }
-
-    /// <summary>
     /// Finds all mesh objects within the given GameObject hierarchy.
     /// </summary>
     /// <param name="obj">Root GameObject to search.</param>
@@ -381,96 +374,6 @@ public class NavigationController : MonoBehaviour
         foreach (Transform child in obj.transform)
         {
             AddCollidersRecursively(child.gameObject);
-        }
-    }
-
-    /// <summary>
-    /// Sets the destination for navigation and updates the path accordingly.
-    /// </summary>
-    /// <param name="targetLabel">The label of the target destination.</param>
-    public void SetDestination(string targetLabel)
-    {
-        defaultDestination = targetLabel;
-        currentPathIndex = 0;
-        lastSpokenInstruction = "";
-        lastInstructionTime = DateTime.UtcNow;
-        hasSpokenInitialInstruction = false;
-        hasReachedDestination = false;
-        lastValidPathCorners = null;
-        pathLine.positionCount = 0;
-        shouldRecalculatePath = true;
-
-        if (destinationPoints.TryGetValue(targetLabel, out Transform target))
-        {
-            ShowNavigationPath(target.position);
-        }
-        else if (destinationPoints.TryGetValue(destinationPoints.Keys.First(), out Transform defaultTarget))
-        {
-            ShowNavigationPath(defaultTarget.position);
-        }
-        else
-        {
-            Debug.LogError($"Destination {targetLabel} not found.");
-        }
-
-        foreach (var kvp in destinationPoints)
-        {
-            Transform destination = kvp.Value;
-            MeshRenderer[] renderers = destination.GetComponentsInChildren<MeshRenderer>();
-            foreach (var renderer in renderers)
-            {
-                if (kvp.Key == targetLabel)
-                {
-                    ResetShader(renderer);
-                }
-                else
-                {
-                    // Apply transparent shader to hide other destinations
-                    ApplyTransparentShader(renderer);
-                }
-            }
-        }
-    }
-    
-    /// <summary>
-    /// Resets the shader of a renderer to the default red material for location pins and enable the textmesh
-    /// </summary>
-    /// <param name="renderer">The renderer to reset.</param>
-    private void ResetShader(Renderer renderer)
-    {
-        TextMeshPro tmp = renderer.GetComponent<TextMeshPro>(); 
-        // Only apply red material to non-TextMeshPro objects
-        if (tmp == null)
-        {
-            renderer.material = redMaterial;
-        }
-        else
-        {
-            // Ensure text is visible for the selected destination
-            tmp.enabled = true;
-        }
-    }
-
-    /// <summary>
-    /// Applies a transparent shader to a given renderer, but ensures TextMeshPro retains its material.
-    /// </summary>
-    /// <param name="renderer">Renderer to apply transparency to.</param>
-    private void ApplyTransparentShader(Renderer renderer)
-    {
-        TextMeshPro tmp = renderer.GetComponent<TextMeshPro>();
-        // Only apply transparency to non-TextMeshPro objects
-        if (tmp == null)
-        {
-            Material transparentMaterial = CreateTransparentMaterial();
-            if (transparentMaterial != null)
-            {
-                renderer.material = transparentMaterial;
-            }
-        }
-        else
-        {
-            // Hide text for non-selected destinations
-            tmp.enabled = false;
         }
     }
 
@@ -559,6 +462,142 @@ public class NavigationController : MonoBehaviour
     }
     
     /// <summary>
+    /// Sets the destination for navigation and updates the path accordingly.
+    /// </summary>
+    /// <param name="targetLabel">The label of the target destination.</param>
+    public void SetDestination(string targetLabel)
+    {
+        defaultDestination = targetLabel;
+        currentPathIndex = 0;
+        lastSpokenInstruction = "";
+        lastInstructionTime = DateTime.UtcNow;
+        hasSpokenInitialInstruction = false;
+        hasReachedDestination = false;
+        lastValidPathCorners = null;
+        pathLine.positionCount = 0;
+        shouldRecalculatePath = true;
+
+        if (destinationPoints.TryGetValue(targetLabel, out Transform target))
+        {
+            ShowNavigationPath(target.position);
+        }
+        else if (destinationPoints.TryGetValue(destinationPoints.Keys.First(), out Transform defaultTarget))
+        {
+            ShowNavigationPath(defaultTarget.position);
+        }
+        else
+        {
+            Debug.LogError($"debug log: Destination {targetLabel} not found.");
+        }
+
+        // Loop through all destinations and show only the selected one
+        foreach (var kvp in destinationPoints)
+        {
+            Transform destination = kvp.Value;
+            bool isSelected = kvp.Key == targetLabel;
+
+            Debug.Log($"debug log: Processing destination = {kvp.Key}, isSelected = {isSelected}");
+
+            // Enable/disable all renderers instead of SetActive()
+            foreach (var renderer in destination.GetComponentsInChildren<MeshRenderer>())
+            {
+                renderer.enabled = isSelected;
+            }
+
+            // Get TextMeshPro correctly and enable/disable it
+            TextMeshPro tmp = destination.GetComponentInChildren<TextMeshPro>();
+            if (tmp != null)
+            {
+                tmp.enabled = isSelected;
+                Debug.Log($"debug log: TextMeshPro found for {kvp.Key}, enabled = {isSelected}");
+            }
+
+            if (!isSelected)
+            {
+                Debug.Log($"debug log: Applying transparent shader to {kvp.Key}");
+                foreach (var renderer in destination.GetComponentsInChildren<Renderer>())
+                {
+                    ApplyTransparentShader(renderer);
+                }
+            }
+            else
+            {
+                Debug.Log($"debug log: Resetting shader for {kvp.Key}");
+                ResetShader(destination);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Resets the shader of a renderer to the default red material for location pins.
+    /// </summary>
+    private void ResetShader(Transform destination)
+    {
+        MeshRenderer[] renderers = destination.GetComponentsInChildren<MeshRenderer>();
+        Debug.Log($"debug log: ResetShader called for {destination.name}, renderer count = {renderers.Length}");
+
+        foreach (var renderer in renderers)
+        {
+            renderer.material = redMaterial;
+            Debug.Log($"debug log: Reset material to redMaterial for renderer = {renderer.name}");
+        }
+    }
+
+    /// <summary>
+    /// Applies a transparent shader to a given renderer, but ensures TextMeshPro retains its material.
+    /// </summary>
+    /// <param name="renderer">Renderer to apply transparency to.</param>
+    private void ApplyTransparentShader(Renderer renderer)
+    {
+        if (renderer == null)
+        {
+            Debug.LogError("debug log: ApplyTransparentShader - Renderer is null!");
+            return;
+        }
+
+        Material transparentMaterial = CreateTransparentMaterial();
+        if (transparentMaterial != null)
+        {
+            renderer.material = transparentMaterial;
+            Debug.Log($"debug log: ApplyTransparentShader - Set transparent material for {renderer.gameObject.name}");
+        }
+        else
+        {
+            Debug.LogError("debug log: ApplyTransparentShader - Failed to create transparent material!");
+        }
+    }
+
+    /// <summary>
+    /// Creates a transparent material to be used for rendering.
+    /// </summary>
+    /// <returns>The created transparent material.</returns>
+    private Material CreateTransparentMaterial()
+    {
+        Shader standardShader = Shader.Find("Standard");
+        if (standardShader == null)
+        {
+            Debug.LogError("Standard Shader not found!");
+            return null;
+        }
+
+        Material transparentMaterial = new Material(standardShader);
+        transparentMaterial.SetFloat("_Mode", 3); // Transparent Mode
+        transparentMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        transparentMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        transparentMaterial.SetInt("_ZWrite", 0);
+        transparentMaterial.DisableKeyword("_ALPHATEST_ON");
+        transparentMaterial.EnableKeyword("_ALPHABLEND_ON");
+        transparentMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+        transparentMaterial.renderQueue = 3000; // Transparent rendering queue
+
+        Color color = transparentMaterial.color;
+        color.a = 0f; // Fully transparent
+        transparentMaterial.color = color;
+
+        return transparentMaterial;
+    }
+
+    /// <summary>
     /// Displays the navigation path from the user's position to the target.
     /// </summary>
     /// <param name="targetPosition">Target destination position.</param>
@@ -632,7 +671,6 @@ public class NavigationController : MonoBehaviour
         // **Check if the user reached the destination**
         if (UserReachedDestination(userPosition, path))
         {
-            Debug.Log("debug log: User has reached the destination.");
             currentPathIndex = 0;  // Reset the index
             hasReachedDestination = true;
             return;
@@ -640,7 +678,6 @@ public class NavigationController : MonoBehaviour
 
         if (currentPathIndex >= path.corners.Length - 1)
         {
-            Debug.Log("debug log: Reached the last path point, no further navigation needed.");
             return;
         }
 
@@ -650,8 +687,6 @@ public class NavigationController : MonoBehaviour
         {
             Vector3 next = path.corners[currentPathIndex + 1];
 
-            Debug.Log($"debug log: User position: {userPosition}, Last instruction time: {lastInstructionTime}, Seconds since last instruction: {secondsSinceLastInstruction}, currentPathIndex {currentPathIndex}, path.corners.Length: {path.corners.Length}");
-
             if (UserNeedsToRotate(userPosition, next))
             {
                 SendVoiceInstruction("Rotate 180 degrees and then move forward.");
@@ -660,20 +695,17 @@ public class NavigationController : MonoBehaviour
 
             if (secondsSinceLastInstruction < instructionCooldown && Vector3.Distance(userPosition, lastUserPosition) < 0.1f)
             {
-                Debug.Log("debug log: Skipping instruction - Cooldown active or user position unchanged.");
                 return;
             }
 
             if (currentPathIndex == 0)
             {
-                Debug.Log("debug log: Calling GiveInitialInstruction.");
                 GiveInitialInstruction(path);
             }
             else
             {
                 if (ShouldMoveToNextPoint( secondsSinceLastInstruction))
                 {
-                    Debug.Log("debug log: Moving to next path index and calling GiveNextInstruction.");
                     currentPathIndex++;
                     GiveNextInstruction(path);
                     lastUserPosition = userPosition;
@@ -700,8 +732,6 @@ public class NavigationController : MonoBehaviour
         Vector3 direction = (next - current).normalized;
         Vector3 nextDirection = (nextSegment - next).normalized;
         float angle = Vector3.SignedAngle(direction, nextDirection, Vector3.up);
-
-        Debug.Log($"debug log: Turn calculation - angle: {angle}, direction: {direction}, nextDirection: {nextDirection}");
 
         if (Mathf.Abs(angle) > 20) // Detect turn
         {
@@ -734,21 +764,13 @@ public class NavigationController : MonoBehaviour
 
         float distanceToFinal = Vector3.Distance(userXZ, finalXZ);
         float nearThreshold = destinationThreshold / 2;
-
-        Debug.Log($"debug log: Path Corners: {path.corners.Length}");
-        Debug.Log($"debug log: Final Corner XZ: {finalXZ}");
-        Debug.Log($"debug log: User XZ: {userXZ}");
-        Debug.Log($"debug log: Checking destination reach - Distance {distanceToFinal}, Threshold {destinationThreshold}");
-
         if (distanceToFinal < nearThreshold)
         {
-            Debug.Log("debug log: User has reached the destination.");
             SendVoiceInstruction($"You have arrived at your destination {defaultDestination}");
             return true;
         }
         else if (distanceToFinal < destinationThreshold) // If close but not inside threshold
         {
-            Debug.Log($"debug log: Almost there! {distanceToFinal:F1} meters remaining.");
             SendVoiceInstruction($"Your destination {defaultDestination} is about {distanceToFinal:F1} meters ahead.");
         }
 
@@ -781,8 +803,6 @@ public class NavigationController : MonoBehaviour
         float initialDistance = Vector3.Distance(start, next);
         string instruction = $"Start moving forward {Mathf.Round(initialDistance)} meters.";
 
-        Debug.Log($"debug log: Initial instruction: {instruction}, Distance: {initialDistance}");
-
         currentPathIndex = 1;
         SendVoiceInstruction(instruction);
         hasSpokenInitialInstruction = true;
@@ -813,11 +833,8 @@ public class NavigationController : MonoBehaviour
     {
         if (instruction == lastSpokenInstruction)
         {
-            Debug.Log("debug log: Skipping instruction - Same as last spoken.");
             return;
         }
-
-        Debug.Log($"debug log: Sending voice instruction: {instruction}");
 
         lastSpokenInstruction = instruction;
         lastInstructionTime = DateTime.UtcNow; // Update last spoken time
@@ -840,31 +857,6 @@ public class NavigationController : MonoBehaviour
         Debug.Log($"Destination Points: {string.Join(", ", destinationPoints.Keys)}, \n {jsonLabels}");
 
         unityMessageSender.SendMessageToFlutter(jsonLabels);
-    }
-
-    /// <summary>
-    /// Attaches an AR anchor to a given GameObject at a specified position and rotation.
-    /// </summary>
-    /// <param name="obj">The GameObject to attach an anchor to.</param>
-    /// <param name="position">The world position where the anchor should be placed.</param>
-    /// <param name="rotation">The rotation of the anchor.</param>
-    private void AttachAnchor(GameObject obj, Vector3 position, Quaternion rotation)
-    {
-        if (anchorManager == null)
-        {
-            Debug.LogError("ARAnchorManager not assigned!");
-            return;
-        }
-
-        ARAnchor anchor = anchorManager.AddAnchor(new Pose(position, rotation));
-        if (anchor != null)
-        {
-            obj.transform.SetParent(anchor.transform, true);
-        }
-        else
-        { 
-            Debug.LogError("Failed to create an anchor.");
-        }
     }
 
     // void VisualizeNavMesh()

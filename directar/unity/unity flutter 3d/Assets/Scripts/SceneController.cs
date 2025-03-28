@@ -810,10 +810,7 @@ public class SceneController : MonoBehaviour
                     navPoint.name = objData.name;
                     NavigationPoint navComponent = navPoint.GetComponent<NavigationPoint>();
                     
-                    if (navComponent != null)
-                    {
-                        navComponent.SetData(objData.label, objData.isSource, objData.isDestination);
-                    }
+                    navComponent.SetData(objData.label, objData.isSource, objData.isDestination);
 
                     spawnedObjects.Add(navPoint);
                 }

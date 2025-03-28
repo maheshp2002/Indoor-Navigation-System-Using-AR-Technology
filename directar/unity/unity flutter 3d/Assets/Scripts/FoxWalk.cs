@@ -21,8 +21,6 @@ public class FoxWalk : MonoBehaviour
 
     void Start()
     {
-        Debug.Log("debug log: Fox enabled! Positioning...");
-
         arCamera = xrOrigin.GetComponentInChildren<Camera>();
 
         // Position fox after being enabled
