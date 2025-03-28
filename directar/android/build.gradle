@@ -1,26 +1,39 @@
 buildscript {
-    ext.kotlin_version = '2.1.0'
+    ext.kotlin_version = '1.8.22'
+
     repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.4.2'
+        classpath 'com.android.tools.build:gradle:8.2.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath 'com.google.gms:google-services:4.4.2'
+        classpath 'com.google.gms:google-services:4.3.15'
     }
 }
 
-
 allprojects {
     repositories {
+        google()
+        mavenCentral()
         flatDir {
             dirs "${project(':unityLibrary').projectDir}/libs"
         }
+    }
+}
 
-        google()
-        mavenCentral()
+// Add this block to enforce SDK versions for all subprojects
+subprojects {
+    afterEvaluate { project ->
+        if (project.plugins.hasPlugin("com.android.application") ||
+            project.plugins.hasPlugin("com.android.library")) {
+            project.android {
+                compileSdkVersion 34  // Force SDK 34
+                buildToolsVersion "34.0.0"
+            }
+        }
     }
 }
 
