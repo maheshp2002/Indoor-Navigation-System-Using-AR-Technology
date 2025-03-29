@@ -52,7 +52,10 @@ class FirebaseService {
   Future<String?> getUserRole(String userEmail) async {
     final doc = await _firestore.collection('users').doc(userEmail).get();
     if (doc.exists) {
-      return doc['role'] as String?;
+        final data = doc.data();
+        if (data != null && data.containsKey('role')) {
+          return data['role'] as String?;
+        }
     }
     return null;
   }

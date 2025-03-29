@@ -29,15 +29,12 @@ android {
     ndkVersion "25.2.9519653"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        // if you change this value, also change it in android/build.gradle subprojects{}
-        jvmTarget = "1.8"
-        languageVersion = "1.8"  // Add these lines
-        apiVersion = "1.8"
+        jvmTarget = "17" // Update to 17
     }
 
     defaultConfig {
@@ -66,11 +63,11 @@ flutter {
 }
 
 
-dependencies {    
+dependencies {
     implementation project(':unityLibrary')
 
-    implementation platform('com.google.firebase:firebase-bom:31.2.3')
-    implementation 'com.google.firebase:firebase-analytics:21.3.0'
+    implementation platform('com.google.firebase:firebase-bom:33.1.2')
+    implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.core:core-splashscreen:1.0.1'
     // implementation 'com.google.android.gms:play-services-measurement-api:21.3.0'
