@@ -154,11 +154,10 @@ MonoBehaviour:
   unityMessageSender: {fileID: 1763169352}
   xrOrigin: {fileID: 960583988}
   navigationPointPrefab: {fileID: 817901379919154142, guid: df881c1c043359d42b500f9b3f493b44, type: 3}
-  sourcePrefab: {fileID: 817901379919154142, guid: df881c1c043359d42b500f9b3f493b44, type: 3}
   pathLine: {fileID: 1002348631}
   redMaterial: {fileID: 2100000, guid: f9cecda9a0d848448b529b0593dc131a, type: 2}
   anchorManager: {fileID: 960583992}
-  fox: {fileID: 2194363080188990938}
+  fox: {fileID: 1698253434830364097}
 --- !u!4 &22057755
 Transform:
   m_ObjectHideFlags: 0

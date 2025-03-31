@@ -1,1 +1,155 @@
-1# Vector3.Distance - this uses distance= √'(x2​−x1​)2+(y2​−y1​)2+(z2​−z1​)2​ . this is  Euclidean distance formula
+ DOCS URL: https://docs.google.com/document/d/1XxMWiHjlxi3QGEQTEhEQ_YIUX-j4xsJUF1Tq3fG9Xr8/edit?usp=sharing
+
+DirectAr Equations:
+
+1. Squared Distance Check (Optimized Distance Comparison)
+
+Equation: (Δx² + Δy² + Δz²) > (minMoveDistance)²
+
+Purpose: Avoid expensive sqrt operation for distance checks.
+
+Code:
+// In Update()
+if ((userPosition - lastUserPosition).sqrMagnitude > minMoveDistance * minMoveDistance)
+
+Method: Update() (Line: ~98)
+
+
+2. Angle Between Path Segments
+
+Equation: θ = Vector3.Angle(v1, v2)
+
+Purpose: Check if the path direction changes significantly (>20°).
+
+Code:
+// In Update()
+Vector3.Angle(lastValidPathCorners[currentPathIndex] - userPosition, 
+              lastValidPathCorners[currentPathIndex + 1] - lastValidPathCorners[currentPathIndex]) > 20
+
+Method: Update() (Line: ~100)
+
+
+3. Euclidean Distance
+
+Equation: d = √((x₂−x₁)² + (y₂−y₁)² + (z₂−z₁)²)
+
+Purpose: Measure distance to destinations/path points.
+
+Code:
+// In UserReachedDestination()
+float distanceToFinal = Vector3.Distance(userXZ, finalXZ);
+
+Method: UserReachedDestination() (Line: ~583)
+
+
+4. Dot Product for Direction Alignment
+
+Equation: dot = v1 · v2
+
+Purpose: Check if the user faces away from the path (dot < -0.3).
+
+Code:
+// In UserNeedsToRotate()
+float dotProduct = Vector3.Dot(userDirection, directionToNext);
+return dotProduct < -0.3f;
+
+Method: UserNeedsToRotate() (Line: ~631)
+
+
+5. Signed Angle for Turn Detection
+
+Equation: θ = Vector3.SignedAngle(v1, v2, Vector3.up)
+
+Purpose: Calculate left/right turn angles between path segments.
+
+Code:
+// In CalculateTurnInstruction()
+float angle = Vector3.SignedAngle(direction, nextDirection, Vector3.up);
+
+Method: CalculateTurnInstruction() (Line: ~555)
+
+
+6. Time Difference for Instruction Cooldown
+
+Equation: Δt = (CurrentTime − LastInstructionTime).TotalSeconds
+
+Purpose: Prevent voice instruction spam.
+
+Code:
+// In ProvideVoiceNavigation()
+double secondsSinceLastInstruction = (DateTime.UtcNow - lastInstructionTime).TotalSeconds;
+
+Method: ProvideVoiceNavigation() (Line: ~524)
+
+
+7. Position Offset for AR Alignment
+
+Equation: Offset = ARCameraPosition − SceneStartPosition
+
+Purpose: Align virtual scene with AR tracking.
+
+Code:
+// In AdjustScenePosition()
+Vector3 positionOffset = xrOriginStartPosition - sceneStartPosition;
+
+Method: AdjustScenePosition() (Line: ~281)
+
+
+8. Quaternion Rotation Offset
+
+Equation: Q_offset = Q_AR⁻¹ × Q_scene
+
+Purpose: Rotate the scene to match AR orientation.
+
+Code:
+// In AdjustScenePosition()
+Quaternion rotationOffset = Quaternion.Inverse(sceneStartRotation) * xrOriginStartRotation;
+
+Method: AdjustScenePosition() (Line: ~282)
+
+
+9. Distance Rounding for Voice Instructions
+
+Equation: RoundedDistance = Mathf.Round(distance)
+
+Purpose: Simplify instructions (e.g., "Move 5 meters").
+
+Code:
+// In GiveInitialInstruction() and GiveNextInstruction()
+string instruction = $"Move forward {Mathf.Round(distance)} meters.";
+
+Methods: GiveInitialInstruction(), GiveNextInstruction() (Lines: ~597, 617)
+
+
+10. NavMesh Agent Parameters
+
+Equation: AgentRadius, AgentClimb, AgentSlope
+
+Purpose: Configure NavMesh for pathfinding.
+
+Code:
+// In BakeNavMesh()
+settings.agentRadius = 1f;
+settings.agentClimb = 1f; 
+settings.agentSlope = 20f;
+
+Method: BakeNavMesh() (Line: ~398)
+
+
+11. XZ-Plane Projection
+
+Equation: p_{XZ} = (p.x, 0, p.z)
+
+Purpose: Ignore vertical differences for 2D distance checks.
+
+Code:
+// In UserReachedDestination()
+Vector3 userXZ = new Vector3(userPosition.x, 0, userPosition.z);
+Vector3 finalXZ = new Vector3(path.corners[lastIndex].x, 0, path.corners[lastIndex].z);
+
+Method: UserReachedDestination() (Line: ~580)
+
+
+
+
+

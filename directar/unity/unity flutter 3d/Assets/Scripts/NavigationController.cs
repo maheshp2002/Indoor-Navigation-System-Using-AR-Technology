@@ -51,7 +51,6 @@ public class NavigationController : MonoBehaviour
     [SerializeField] private UnityMessageSender unityMessageSender;
     public GameObject xrOrigin; // XR Origin GameObject
     public GameObject navigationPointPrefab; // Prefab for navigation points destination
-    public GameObject sourcePrefab; // Prefab for source
     public LineRenderer pathLine; // LineRenderer for navigation
     private OBJLoader objLoader = new OBJLoader();
     private Dictionary<string, Transform> destinationPoints = new Dictionary<string, Transform>();
@@ -76,7 +75,8 @@ public class NavigationController : MonoBehaviour
     private Vector3 lastCheckedPositionXZ;
     private float lastCheckedTime;
     private float userStopThreshold = 0.05f;
-    public GameObject fox;
+    public FoxWalk fox;
+    private Material transparentMaterial;
 
     /// <summary>
     /// Initializes the AR scene and configures settings for Android.
@@ -168,7 +168,7 @@ public class NavigationController : MonoBehaviour
                 {
                     sceneStartPosition = objData.position;
                     sceneStartRotation = objData.rotation;
-                    SetupNavigationPoint(objData);
+                    // SetupNavigationPoint(objData);
                     xrOrigin.SetActive(true);
                 } else if (objData.type == "NavigationLine" && objData.isDestination == true)
                 {
@@ -188,7 +188,7 @@ public class NavigationController : MonoBehaviour
             Invoke(nameof(BakeNavMesh), 2.0f);
             // Delete temp folder after baking NavMesh
             StartCoroutine(DeleteTempFolderAfterNavMesh(tempFolder));
-            fox.SetActive(true); 
+            fox.PositionFox();
         }
         catch (Exception ex)
         {
@@ -214,8 +214,6 @@ public class NavigationController : MonoBehaviour
         }
     }
 
-
-
     /// <summary>
     /// Creates and sets up a navigation point in the scene.
     /// </summary>
@@ -228,7 +226,7 @@ public class NavigationController : MonoBehaviour
         {
             navPoint = Instantiate(navigationPointPrefab, objData.position, objData.rotation);
         } else {
-            navPoint = Instantiate(sourcePrefab, objData.position, objData.rotation);
+            navPoint = Instantiate(navigationPointPrefab, objData.position, objData.rotation);
         }
 
         // Ensure it remains anchored in AR
@@ -322,15 +320,12 @@ public class NavigationController : MonoBehaviour
     /// <param name="objects">List of GameObjects to hide.</param>
     private void HideRenderers(List<GameObject> objects)
     {
-        Material transparentMaterial = CreateTransparentMaterial();
-        if (transparentMaterial == null) return;
-
         foreach (var obj in objects)
         {
             MeshRenderer[] meshRenderers = obj.GetComponentsInChildren<MeshRenderer>();
             foreach (var renderer in meshRenderers)
             {
-                renderer.material = transparentMaterial;
+                renderer.material = GetTransparentMaterial();
             }
         }
     }
@@ -495,35 +490,25 @@ public class NavigationController : MonoBehaviour
         {
             Transform destination = kvp.Value;
             bool isSelected = kvp.Key == targetLabel;
+            MeshRenderer[] renderers = destination.GetComponentsInChildren<MeshRenderer>();
+            TextMeshPro textMesh = destination.transform.Find("LabelText")?.GetComponent<TextMeshPro>();
 
-            Debug.Log($"debug log: Processing destination = {kvp.Key}, isSelected = {isSelected}");
-
-            // Enable/disable all renderers instead of SetActive()
-            foreach (var renderer in destination.GetComponentsInChildren<MeshRenderer>())
-            {
-                renderer.enabled = isSelected;
+            if (textMesh != null) {
+                textMesh.enabled = isSelected;
+                Debug.Log($"debug log: textMesh.enabled {textMesh.enabled}");
             }
 
-            // Get TextMeshPro correctly and enable/disable it
-            TextMeshPro tmp = destination.GetComponentInChildren<TextMeshPro>();
-            if (tmp != null)
+            foreach (var renderer in renderers)
             {
-                tmp.enabled = isSelected;
-                Debug.Log($"debug log: TextMeshPro found for {kvp.Key}, enabled = {isSelected}");
-            }
-
-            if (!isSelected)
-            {
-                Debug.Log($"debug log: Applying transparent shader to {kvp.Key}");
-                foreach (var renderer in destination.GetComponentsInChildren<Renderer>())
+                if (kvp.Key == targetLabel)
                 {
+                    ResetShader(renderer);
+                }
+                else
+                {
+                    // Apply transparent shader to hide other destinations
                     ApplyTransparentShader(renderer);
                 }
-            }
-            else
-            {
-                Debug.Log($"debug log: Resetting shader for {kvp.Key}");
-                ResetShader(destination);
             }
         }
     }
@@ -531,15 +516,14 @@ public class NavigationController : MonoBehaviour
     /// <summary>
     /// Resets the shader of a renderer to the default red material for location pins.
     /// </summary>
-    private void ResetShader(Transform destination)
+    private void ResetShader(Renderer renderer)
     {
-        MeshRenderer[] renderers = destination.GetComponentsInChildren<MeshRenderer>();
-        Debug.Log($"debug log: ResetShader called for {destination.name}, renderer count = {renderers.Length}");
-
-        foreach (var renderer in renderers)
+        TextMeshPro tmp = renderer.GetComponent<TextMeshPro>(); 
+        Debug.Log($"debug log: textMesh.enabled {tmp}");
+        // Only apply red material to non-TextMeshPro objects
+        if (tmp == null)
         {
             renderer.material = redMaterial;
-            Debug.Log($"debug log: Reset material to redMaterial for renderer = {renderer.name}");
         }
     }
 
@@ -555,10 +539,9 @@ public class NavigationController : MonoBehaviour
             return;
         }
 
-        Material transparentMaterial = CreateTransparentMaterial();
         if (transparentMaterial != null)
         {
-            renderer.material = transparentMaterial;
+            renderer.material = GetTransparentMaterial();
             Debug.Log($"debug log: ApplyTransparentShader - Set transparent material for {renderer.gameObject.name}");
         }
         else
@@ -571,29 +554,31 @@ public class NavigationController : MonoBehaviour
     /// Creates a transparent material to be used for rendering.
     /// </summary>
     /// <returns>The created transparent material.</returns>
-    private Material CreateTransparentMaterial()
+    private Material GetTransparentMaterial()
     {
-        Shader standardShader = Shader.Find("Standard");
-        if (standardShader == null)
+        if (transparentMaterial == null)
         {
-            Debug.LogError("Standard Shader not found!");
-            return null;
+            Shader standardShader = Shader.Find("Standard");
+            if (standardShader == null)
+            {
+                Debug.LogError("Standard Shader not found!");
+                return null;
+            }
+
+            transparentMaterial = new Material(standardShader);
+            transparentMaterial.SetFloat("_Mode", 3); // Transparent Mode
+            transparentMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            transparentMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            transparentMaterial.SetInt("_ZWrite", 0);
+            transparentMaterial.DisableKeyword("_ALPHATEST_ON");
+            transparentMaterial.EnableKeyword("_ALPHABLEND_ON");
+            transparentMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+            transparentMaterial.renderQueue = 3000;
+
+            Color color = transparentMaterial.color;
+            color.a = 0f;
+            transparentMaterial.color = color;
         }
-
-        Material transparentMaterial = new Material(standardShader);
-        transparentMaterial.SetFloat("_Mode", 3); // Transparent Mode
-        transparentMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-        transparentMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-        transparentMaterial.SetInt("_ZWrite", 0);
-        transparentMaterial.DisableKeyword("_ALPHATEST_ON");
-        transparentMaterial.EnableKeyword("_ALPHABLEND_ON");
-        transparentMaterial.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-        transparentMaterial.renderQueue = 3000; // Transparent rendering queue
-
-        Color color = transparentMaterial.color;
-        color.a = 0f; // Fully transparent
-        transparentMaterial.color = color;
-
         return transparentMaterial;
     }
 

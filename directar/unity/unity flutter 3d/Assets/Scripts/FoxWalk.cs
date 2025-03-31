@@ -18,10 +18,13 @@ public class FoxWalk : MonoBehaviour
     private float stillTime = 0f;
     private float stillThreshold = 0.2f; // Time before switching to sit
     private Vector3 xrDelta;
+    
+    void Start() {
+        arCamera = Camera.main; 
+    }
 
-    void Start()
-    {
-        arCamera = xrOrigin.GetComponentInChildren<Camera>();
+    public void PositionFox() {
+        arCamera = Camera.main; 
 
         // Position fox after being enabled
         Vector3 startPosition = arCamera.transform.position + (arCamera.transform.forward * startOffset);

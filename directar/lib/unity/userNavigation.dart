@@ -170,7 +170,7 @@ class UserNavigationState extends State<UserNavigation> {
 
   @override
   void dispose() {
-    _unityController?.dispose();
+    _unityController?.unload();
     _unityController = null;
     super.dispose();
   }
